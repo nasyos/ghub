@@ -1093,15 +1093,20 @@ export default function Candidates({
   const workLocations = ["東京", "大阪", "名古屋", "福岡", "その他"]
 
   return (
-    <div className="flex-1 space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+          <div className="flex-1 space-y-4 p-6 bg-gray-50 h-full overflow-y-auto">
+        <div className="flex items-center space-x-1 text-xs text-gray-500 mb-2">
+          <span>ホーム</span>
+          <span>&gt;</span>
+          <span>求職者管理</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
           {onBack && (
             <Button variant="outline" onClick={onBack}>
               ← 戻る
             </Button>
           )}
-          <h1 className="text-3xl font-bold tracking-tight">求職者管理</h1>
+          <h1 className="text-2xl font-bold text-gray-900">求職者管理</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={downloadCsvFormat} data-testid="csv-candidate-template">

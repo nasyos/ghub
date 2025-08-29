@@ -115,10 +115,9 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+  * { @apply border-border outline-ring/50; }
+  html { font-family: var(--font-sans); }                 /* ← 追加 */
+  body { @apply bg-background text-foreground; }
+  code, pre, kbd, samp { font-family: var(--font-mono); } /* ← 追加 */
 }
+

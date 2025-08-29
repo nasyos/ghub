@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { MockFacebookPage, MockThread, MockMessage } from "@/lib/mock/messages.fixtures"
 import { getSendState, type DisplayTagName } from "@/lib/api"
 import { useRouter, useSearchParams } from "next/navigation"
+import PageHeader from "@/components/layout/PageHeader"
 
 interface MessageTemplate {
   id: string
@@ -155,7 +156,7 @@ export function Messages() {
     if (!user) return { state: "blocked", label: "接続エラー", color: "bg-red-500" }
 
     const currentPage = pages.find((p) => p.pageId === thread.pageId)
-    const sendState = getSendState(thread, user.role, user.id.toString(), currentPage)
+    const sendState = getSendState(thread, user.role, user.id.toString(), currentPage as any)
 
     switch (sendState) {
       case "active":
@@ -292,7 +293,7 @@ export function Messages() {
 
     try {
       const { messagesClient } = await import("@/lib/api")
-      await messagesClient.sendMessage({
+      await (messagesClient as any).sendMessage({
         threadId: selectedThread.id,
         text: newMessage,
         tag: selectedTagForSend || undefined,
@@ -479,12 +480,22 @@ export function Messages() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Left Pane - Thread List */}
-      <div className="w-1/3 border-r flex flex-col">
-        <div className="sticky top-0 z-50 bg-background border-b px-4 py-3">
-          <h1 className="text-xl font-bold">メッセージ管理</h1>
-        </div>
+    <div className="flex-1 bg-gray-50 h-full overflow-y-auto">
+      <PageHeader
+        title="メッセージ管理"
+        breadcrumbs={[{ label: "ホーム", href: "/" }, { label: "メッセージ管理" }]}
+        tabs={[
+          { value: "all", label: "横断" },
+          { value: "page", label: "ページ別" },
+        ]}
+        activeTab={tabMode}
+        onTabChange={(v) => setTabMode(v as "all" | "page")}
+      />
+
+      <div className="container max-w-7xl px-6 py-6">
+        <div className="flex bg-background border rounded-md overflow-hidden">
+        {/* Left Pane - Thread List */}
+        <div className="w-1/3 border-r flex flex-col">
 
         {/* Tab Navigation */}
         <div className="border-b">
@@ -521,7 +532,7 @@ export function Messages() {
               <SelectContent>
                 {pages.map((page) => (
                   <SelectItem key={page.pageId} value={page.pageId}>
-                    {page.pageName}
+                    {(page as any).pageName || page.pageId}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -1004,7 +1015,7 @@ export function Messages() {
                 variant="outline"
                 className="w-full justify-start bg-transparent"
                 onClick={() => {
-                  setSelectedTagForSend("CONFIRMED_EVENT_UPDATE")
+                  setSelectedTagForSend("CONFIRMED_EVENT_UPDATE" as any)
                   setShowTagModal(false)
                 }}
               >
@@ -1014,7 +1025,7 @@ export function Messages() {
                 variant="outline"
                 className="w-full justify-start bg-transparent"
                 onClick={() => {
-                  setSelectedTagForSend("ACCOUNT_UPDATE")
+                  setSelectedTagForSend("ACCOUNT_UPDATE" as any)
                   setShowTagModal(false)
                 }}
               >
@@ -1041,6 +1052,8 @@ export function Messages() {
           </div>
         </DialogContent>
       </Dialog>
+        </div>
+      </div>
     </div>
   )
 }

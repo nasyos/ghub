@@ -980,15 +980,20 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
     return jobSelectionSteps[jobId] || mockJobs.find((j) => j.id === jobId)?.selectionSteps || []
   }
 
-  return (
-    <div className="flex-1 space-y-6 p-6">
-      {/* ヘッダー */}
-      <div className="flex items-center gap-4">
+      return (
+      <div className="flex-1 space-y-4 p-6 bg-gray-50 h-full overflow-y-auto">
+        <div className="flex items-center space-x-1 text-xs text-gray-500 mb-2">
+          <span>ホーム</span>
+          <span>&gt;</span>
+          <span>候補者詳細</span>
+        </div>
+        {/* ヘッダー */}
+        <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           戻る
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight">候補者詳細</h1>
+        <h1 className="text-2xl font-bold text-gray-900">候補者詳細</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

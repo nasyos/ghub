@@ -278,8 +278,13 @@ export function JobSelection({ jobId, onBack, onNavigateToCandidateDetail, onNav
     onNavigateToMessages?.(row.candidateId)
   }
 
-  return (
-    <div className="flex-1 space-y-6 p-6">
+      return (
+      <div className="flex-1 space-y-4 p-6 bg-gray-50 h-full overflow-y-auto">
+        <div className="flex items-center space-x-1 text-xs text-gray-500 mb-2">
+          <span>ホーム</span>
+          <span>&gt;</span>
+          <span>求人別選考管理</span>
+        </div>
       {showNotification && (
         <div className="fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 z-50">
           <Bell className="h-4 w-4" />
@@ -294,7 +299,7 @@ export function JobSelection({ jobId, onBack, onNavigateToCandidateDetail, onNav
             戻る
           </Button>
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">求人別選考管理</h2>
+            <h2 className="text-2xl font-bold text-gray-900">求人別選考管理</h2>
             <div className="text-sm text-muted-foreground mt-1">
               {mockJob.id} / {mockJob.company} / {mockJob.title} / {mockJob.location}
             </div>

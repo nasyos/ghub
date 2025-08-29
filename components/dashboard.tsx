@@ -480,12 +480,12 @@ export function Dashboard({
   }
 
   return (
-    <div className="flex-1 space-y-6 p-6 bg-gray-50 h-full overflow-y-auto">
+    <div className="flex-1 space-y-4 p-6 bg-gray-50 h-full overflow-y-auto">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">ダッシュボード</h1>
         </div>
-        <div className="flex items-center space-x-2 text-sm text-gray-500">
+        <div className="flex items-center space-x-1 text-xs text-gray-500">
           <Calendar className="h-4 w-4" />
           <span>最終更新: 2025年8月29日 17:30</span>
         </div>

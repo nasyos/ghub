@@ -907,7 +907,7 @@ export default function Jobs({ onNavigate, onNavigateToSelection }: JobsProps) {
           <Button variant="ghost" onClick={handleBackToList} className="px-2">
             ← 戻る
           </Button>
-          <h2 className="text-3xl font-bold tracking-tight">
+          <h2 className="text-2xl font-bold text-gray-900">
             {editingJobId ? `求人編集 (${editingJobId})` : "求人作成"}
           </h2>
         </div>
@@ -1436,7 +1436,7 @@ export default function Jobs({ onNavigate, onNavigateToSelection }: JobsProps) {
             <Button variant="ghost" onClick={handleBackToList} className="px-2">
               ← 戻る
             </Button>
-            <h2 className="text-3xl font-bold tracking-tight">求人詳細 ({job.id})</h2>
+            <h2 className="text-2xl font-bold text-gray-900">求人詳細 ({job.id})</h2>
           </div>
           <div className="flex items-center gap-2">
             {canSeePage?.("jobSelection") && (
@@ -1964,10 +1964,15 @@ export default function Jobs({ onNavigate, onNavigateToSelection }: JobsProps) {
   }
 
   if (currentView === "list") {
-    return (
-      <div className="flex-1 space-y-6 p-6">
+          return (
+      <div className="flex-1 space-y-4 p-6 bg-gray-50 h-full overflow-y-auto">
+        <div className="flex items-center space-x-1 text-xs text-gray-500 mb-2">
+          <span>ホーム</span>
+          <span>&gt;</span>
+          <span>求人管理</span>
+        </div>
         <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold tracking-tight">求人管理</h2>
+          <h2 className="text-2xl font-bold text-gray-900">求人管理</h2>
           <div className="flex gap-2">
             <Button onClick={handleNewJob}>
               <Plus className="mr-2 h-4 w-4" />

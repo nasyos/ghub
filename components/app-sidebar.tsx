@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { MessageSquare, BarChart3, Users, Settings, LogOut, Briefcase, UserCheck } from "lucide-react"
+import { MessageSquare, BarChart3, Users, Settings, LogOut, Briefcase, UserCheck, Building2 } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -51,6 +51,12 @@ const navigationItems = [
     id: "jobs",
     icon: Briefcase,
     testId: "nav-jobs",
+  },
+  {
+    title: "取引先管理",
+    id: "partners",
+    icon: Building2,
+    testId: "nav-partners",
   },
   {
     title: "コミュニティ管理",

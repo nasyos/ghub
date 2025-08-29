@@ -11,10 +11,13 @@ export type PageId =
   | "dashboard"
   | "messages"
   | "candidates"
+  | "candidate-detail" // 候補者詳細
   | "jobs"
   | "jobSelection" // 求人別選考管理
+  | "partners" // 取引先管理
   | "communities"
   | "settings"
+  | "apply" // 応募フォーム
 
 export type FeatureId =
   | "seeCandidateChatFromSelection" // 選考管理→候補者チャット導線（RA不可）
@@ -32,10 +35,13 @@ const PAGE_ACL: Record<PageId, Role[]> = {
   dashboard: ["admin", "ca", "ca_manager", "ra", "ra_manager", "dual"],
   messages: ["admin", "ca", "ca_manager", "dual"],
   candidates: ["admin", "ca", "ca_manager", "dual"],
+  "candidate-detail": ["admin", "ca", "ca_manager", "dual"], // 候補者詳細は候補者管理と同じ権限
   jobs: ["admin", "ra", "ra_manager", "dual"],
   jobSelection: ["admin", "ra", "ra_manager", "dual"],
+  partners: ["admin", "ca", "ca_manager", "dual"], // 取引先管理は管理者とCAがアクセス可能
   communities: ["admin", "ca", "ca_manager", "dual"],
   settings: ["admin", "ca", "ca_manager", "ra", "ra_manager", "dual"],
+  apply: ["admin", "ca", "ca_manager", "ra", "ra_manager", "dual"], // 応募フォームは全員アクセス可能
 }
 
 const FEATURE_ACL: Record<FeatureId, Role[]> = {

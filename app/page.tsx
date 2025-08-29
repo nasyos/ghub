@@ -8,6 +8,7 @@ import { Candidates } from "@/components/candidates"
 import Jobs from "@/components/jobs"
 import { Settings } from "@/components/settings"
 import { Communities } from "@/components/communities"
+import PartnersClient from "@/app/partners/_components/PartnersClient"
 import { ApplyForm } from "@/components/apply-form"
 import { Login } from "@/components/login"
 import { NotificationBanner } from "@/components/notification-banner"
@@ -36,6 +37,7 @@ const PAGE_PRIORITY = [
   "candidate-detail", // Added candidate-detail to PAGE_PRIORITY array
   "jobs",
   "jobSelection",
+  "partners", // 取引先管理を追加
   "communities",
   "settings",
   "apply",
@@ -158,6 +160,8 @@ function AppContent() {
             }}
           />
         )
+      case "partners":
+        return <PartnersClient />
       case "communities":
         return <Communities />
       case "settings":
@@ -183,6 +187,8 @@ function AppContent() {
         return "求人管理"
       case "jobSelection":
         return "選考管理"
+      case "partners":
+        return "取引先管理"
       case "communities":
         return "コミュニティ管理"
       case "settings":
