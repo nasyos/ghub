@@ -14,6 +14,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Search, Plus, Edit, Copy, Trash2, Send, ChevronDown, X, Download, Upload, FileText } from "lucide-react"
 import { publish } from "@/lib/event-bus"
 import { useAuth } from "@/contexts/auth-context"
+import { PageHeader } from "@/components/common/PageHeader"
 import {
   Dialog,
   DialogContent,
@@ -1991,25 +1992,25 @@ export default function Jobs({ onNavigate, onNavigateToSelection, onNavigateToPi
 
   if (currentView === "list") {
           return (
-      <div className="flex-1 space-y-4 p-6 bg-gray-50 h-full overflow-y-auto">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">求人管理</h2>
-          <div className="flex gap-2">
+      <div className="flex-1 space-y-3 p-4 bg-gray-50 h-full overflow-y-auto">
+        <PageHeader 
+          title="求人管理"
+          actions={
             <Button onClick={handleNewJob}>
               <Plus className="mr-2 h-4 w-4" />
               新規作成
             </Button>
-          </div>
-        </div>
+          }
+        />
 
-        <Card className="shadow-sm">
-          <CardHeader className="pb-4">
+        <Card className="shadow-sm jobs-filter-card">
+          <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Search className="h-5 w-5" />
               検索・フィルタ
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 pt-0">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <Input
@@ -2025,7 +2026,7 @@ export default function Jobs({ onNavigate, onNavigateToSelection, onNavigateToPi
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1.5">
               <div className="space-y-1.5 lg:col-span-1.5">
                 <Label className="text-sm font-medium text-muted-foreground">勤務地</Label>
                 <Select value={locationFilter} onValueChange={setLocationFilter}>
@@ -2159,8 +2160,8 @@ export default function Jobs({ onNavigate, onNavigateToSelection, onNavigateToPi
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm">
-          <CardHeader>
+        <Card className="shadow-sm jobs-table-card">
+          <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between text-lg">
               <span>求人一覧 ({filteredJobs.length}件)</span>
               <div className="flex gap-2">
@@ -2184,50 +2185,50 @@ export default function Jobs({ onNavigate, onNavigateToSelection, onNavigateToPi
               </div>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 pt-0">
             <div className="overflow-x-auto">
-              <Table>
+              <Table className="jobs-table">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-24">求人ID</TableHead>
-                    <TableHead className="min-w-32">企業名</TableHead>
-                    <TableHead className="min-w-24">職種</TableHead>
-                    <TableHead className="min-w-24">勤務地</TableHead>
-                    <TableHead className="min-w-32">月給レンジ</TableHead>
-                    <TableHead className="min-w-24">在留資格</TableHead>
-                    <TableHead className="w-16">JLPT</TableHead>
-                    <TableHead className="w-16">優先度</TableHead>
-                    <TableHead className="w-20">ステータス</TableHead>
-                    <TableHead className="w-24">最終更新</TableHead>
+                  <TableRow className="jobs-table-row">
+                    <TableHead className="w-24 py-2">求人ID</TableHead>
+                    <TableHead className="min-w-32 py-2">企業名</TableHead>
+                    <TableHead className="min-w-24 py-2">職種</TableHead>
+                    <TableHead className="min-w-24 py-2">勤務地</TableHead>
+                    <TableHead className="min-w-32 py-2">月給レンジ</TableHead>
+                    <TableHead className="min-w-24 py-2">在留資格</TableHead>
+                    <TableHead className="w-16 py-2">JLPT</TableHead>
+                    <TableHead className="w-16 py-2">優先度</TableHead>
+                    <TableHead className="w-20 py-2">ステータス</TableHead>
+                    <TableHead className="w-24 py-2">最終更新</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredJobs.map((job) => (
                     <TableRow
                       key={job.id}
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      className="cursor-pointer hover:bg-muted/50 transition-colors jobs-table-row"
                       onClick={() => handleViewJob(job.id)}
                     >
-                      <TableCell className="font-mono text-xs">{job.id}</TableCell>
-                      <TableCell className="font-medium">{job.company}</TableCell>
-                      <TableCell>{job.title}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-mono text-xs py-2">{job.id}</TableCell>
+                      <TableCell className="font-medium py-2">{job.company}</TableCell>
+                      <TableCell className="py-2">{job.title}</TableCell>
+                      <TableCell className="py-2">
                         {job.location.pref} {job.location.city}
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="text-sm py-2">
                         ¥{job.salary.min.toLocaleString()} - ¥{job.salary.max.toLocaleString()}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <Badge variant="outline" className="text-xs">
                           {visaTypeLabels[job.visa.types[0] as keyof typeof visaTypeLabels] || job.visa.types[0]}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <Badge variant="secondary" className="text-xs">
                           {job.visa.jlpt}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <Badge
                           variant={priorityColors[job.priority as keyof typeof priorityColors]}
                           className="text-xs"
@@ -2235,12 +2236,12 @@ export default function Jobs({ onNavigate, onNavigateToSelection, onNavigateToPi
                           {job.priority}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <Badge variant={statusColors[job.status as keyof typeof statusColors]} className="text-xs">
                           {statusLabels[job.status as keyof typeof statusLabels]}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{job.updatedAt}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground py-2">{job.updatedAt}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -2288,4 +2289,34 @@ export default function Jobs({ onNavigate, onNavigateToSelection, onNavigateToPi
       </div>
     )
   }
+}
+
+// 求人管理専用のCSS調整
+const jobsStyles = `
+  .jobs-filter-card .card-header {
+    padding: 1rem 1.5rem 0.75rem 1.5rem;
+  }
+  .jobs-filter-card .card-content {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+  }
+  .jobs-table-card .card-header {
+    padding: 1rem 1.5rem 0.75rem 1.5rem;
+  }
+  .jobs-table-card .card-content {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+  }
+  .jobs-table .jobs-table-row {
+    height: 3.5rem;
+  }
+  .jobs-table .jobs-table-row td,
+  .jobs-table .jobs-table-row th {
+    padding: 0.5rem 0.75rem;
+  }
+`
+
+// スタイルを適用
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style')
+  styleElement.textContent = jobsStyles
+  document.head.appendChild(styleElement)
 }

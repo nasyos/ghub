@@ -25,11 +25,8 @@ import {
 interface PipelineTableProps {
   applications: ApplicationRow[]
   loading: boolean
-  selectedApplication: ApplicationRow | null
-  onSelectApplication: (application: ApplicationRow) => void
+  onRowClick: (application: ApplicationRow) => void
   jobFilterActive?: boolean
-  onOpenRecommendTab?: (application: ApplicationRow) => void
-  onOpenProgressTab?: (application: ApplicationRow) => void
 }
 
 const getDaysSinceLastActivity = (lastActivityAt: string): number => {
@@ -78,7 +75,7 @@ const getNextActionIcon = (action: string) => {
   }
 }
 
-const getActionButtons = (application: ApplicationRow, jobFilterActive: boolean, onOpenRecommendTab?: (app: ApplicationRow) => void, onOpenProgressTab?: (app: ApplicationRow) => void) => {
+const getActionButtons = (application: ApplicationRow, jobFilterActive: boolean) => {
   const buttons = []
   
   if (jobFilterActive) {
@@ -92,7 +89,7 @@ const getActionButtons = (application: ApplicationRow, jobFilterActive: boolean,
             className="h-7 w-7 p-0"
             onClick={(e) => {
               e.stopPropagation()
-              onOpenRecommendTab?.(application)
+              // Drawerで推薦タブを開く処理は後で実装
             }}
           >
             <Send className="h-3 w-3" />
@@ -111,7 +108,7 @@ const getActionButtons = (application: ApplicationRow, jobFilterActive: boolean,
             className="h-7 w-7 p-0"
             onClick={(e) => {
               e.stopPropagation()
-              onOpenProgressTab?.(application)
+              // Drawerで選考タブを開く処理は後で実装
             }}
           >
             <Calendar className="h-3 w-3" />
@@ -181,11 +178,8 @@ const getActionButtons = (application: ApplicationRow, jobFilterActive: boolean,
 export function PipelineTable({ 
   applications, 
   loading, 
-  selectedApplication, 
-  onSelectApplication,
-  jobFilterActive = false,
-  onOpenRecommendTab,
-  onOpenProgressTab
+  onRowClick, 
+  jobFilterActive = false
 }: PipelineTableProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
@@ -242,15 +236,12 @@ export function PipelineTable({
           <tbody>
             {applications.map((app) => {
               const days = getDaysSinceLastActivity(app.last_activity_at)
-              const isSelected = selectedApplication?.id === app.id
               
               return (
                 <tr 
                   key={app.id} 
-                  className={`border-b hover:bg-muted/50 cursor-pointer transition-colors ${
-                    isSelected ? "bg-muted" : ""
-                  }`}
-                  onClick={() => onSelectApplication(app)}
+                  className="border-b hover:bg-muted/50 cursor-pointer transition-colors"
+                  onClick={() => onRowClick(app)}
                   style={{ height: '70px' }}
                 >
                   <td className="p-3" onClick={(e) => e.stopPropagation()}>
@@ -324,7 +315,7 @@ export function PipelineTable({
                   </td>
                   <td className="p-3">
                     <div className="flex gap-1 justify-end">
-                      {getActionButtons(app, jobFilterActive, onOpenRecommendTab, onOpenProgressTab)}
+                      {getActionButtons(app, jobFilterActive)}
                     </div>
                   </td>
                 </tr>

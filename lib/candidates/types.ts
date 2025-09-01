@@ -68,6 +68,11 @@ export interface Candidate {
   requiresResponse?: boolean
   lastMessageAIJudgment?: AIJudgment
   lastMessageDirection?: "in" | "out"
+  
+  // 新規追加項目
+  sourceChannel?: string // 流入経路
+  otherSnsLink?: string // 他SNSリンク（単一）
+  customFields?: Array<{ id: string; title: string; value: string }> // CA追加項目
   // 新規追加フィールド（すべて nullable）
   birthDate?: string | null
   addressDetail?: string | null

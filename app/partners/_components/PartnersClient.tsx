@@ -16,6 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Search, Edit, Trash2, Building2, User, Mail, Phone, MapPin, Tag, FileText, Calendar, TrendingUp, Eye, ArrowUpDown, Loader2, Copy, Check, Users, FilterX } from "lucide-react";
 import { toast } from "sonner";
 import PartnerForm from "./PartnerForm";
+import { PageHeader } from "@/components/common/PageHeader";
 
 export default function PartnersClient() {
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -242,23 +243,23 @@ export default function PartnersClient() {
   const hasActiveFilters = searchTerm !== "" || rankFilter !== "all";
 
       return (
-      <div className="flex-1 space-y-4 p-6 bg-gray-50 h-full overflow-y-auto">
+      <div className="flex-1 space-y-3 p-4 bg-gray-50 h-full overflow-y-auto">
         {/* ヘッダー */}
-        <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">取引先管理</h1>
-          <p className="text-muted-foreground">取引先の一覧・検索・登録</p>
-        </div>
-        <Button onClick={openCreateForm}>
-          <Plus className="w-4 h-4 mr-2" />
-          新規登録
-        </Button>
-      </div>
+        <PageHeader 
+          title="取引先管理"
+          description="取引先の一覧・検索・登録"
+          actions={
+            <Button onClick={openCreateForm}>
+              <Plus className="w-4 h-4 mr-2" />
+              新規登録
+            </Button>
+          }
+        />
 
       {/* ツールバー */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+      <Card className="partners-filter-card">
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
             <div className="flex flex-col sm:flex-row gap-4 flex-1">
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -289,7 +290,7 @@ export default function PartnersClient() {
       </Card>
 
              {/* テーブルまたはエンプティステート */}
-       <Card>
+       <Card className="partners-table-card">
          <CardContent className="p-0">
            {isEmpty ? (
              // データが0件の場合のエンプティステート
@@ -323,9 +324,9 @@ export default function PartnersClient() {
              </div>
            ) : (
              // 通常のテーブル表示
-             <Table>
+             <Table className="partners-table">
                <TableHeader>
-                 <TableRow>
+                 <TableRow className="partners-table-row">
                                        <SortableHeader field="name">法人名</SortableHeader>
                     <TableHead>部署</TableHead>
                     <SortableHeader field="owner">担当者</SortableHeader>
@@ -343,7 +344,7 @@ export default function PartnersClient() {
                  {currentPartners.map((partner) => (
                    <TableRow 
                      key={partner.id} 
-                     className="cursor-pointer hover:bg-muted/50"
+                     className="cursor-pointer hover:bg-muted/50 partners-table-row"
                      onClick={() => openDetailSheet(partner)}
                    >
                                            <TableCell className="font-medium">{partner.name}</TableCell>
@@ -657,4 +658,34 @@ export default function PartnersClient() {
        </AlertDialog>
     </div>
   );
+}
+
+// 取引先管理専用のCSS調整
+const partnersStyles = `
+  .partners-filter-card .card-header {
+    padding: 1rem 1.5rem 0.75rem 1.5rem;
+  }
+  .partners-filter-card .card-content {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+  }
+  .partners-table-card .card-header {
+    padding: 1rem 1.5rem 0.75rem 1.5rem;
+  }
+  .partners-table-card .card-content {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+  }
+  .partners-table .partners-table-row {
+    height: 3.5rem;
+  }
+  .partners-table .partners-table-row td,
+  .partners-table .partners-table-row th {
+    padding: 0.5rem 0.75rem;
+  }
+`
+
+// スタイルを適用
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style')
+  styleElement.textContent = partnersStyles
+  document.head.appendChild(styleElement)
 }

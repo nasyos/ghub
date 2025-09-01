@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react"
 import { useState, useEffect, useMemo } from "react"
+import { PageHeader } from "@/components/common/PageHeader"
 
 const Skel: React.FC<{ className?: string }> = ({ className }) => (
   <div className={`animate-pulse rounded-md bg-muted ${className ?? "h-4 w-24"}`} />
@@ -339,13 +340,13 @@ const jobPipelineData = [
 function KPICard({ stat, loading }: { stat: (typeof kpiStats)[0]; loading: boolean }) {
   const Icon = stat.icon
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <Card className="dashboard-kpi-card">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-3 pt-3">
         <CardTitle className="text-sm font-medium text-gray-600">{stat.title}</CardTitle>
         <Icon className={`h-5 w-5 ${stat.color}`} />
       </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
+      <CardContent className="px-3 pb-3">
+        <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500">本日</span>
             {loading ? (
@@ -480,16 +481,16 @@ export function Dashboard({
   }
 
   return (
-    <div className="flex-1 space-y-4 p-6 bg-gray-50 h-full overflow-y-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">ダッシュボード</h1>
-        </div>
-        <div className="flex items-center space-x-1 text-xs text-gray-500">
-          <Calendar className="h-4 w-4" />
-          <span>最終更新: 2025年8月29日 17:30</span>
-        </div>
-      </div>
+    <div className="flex-1 space-y-2 p-3 bg-gray-50 h-full overflow-y-auto">
+      <PageHeader 
+        title="ダッシュボード"
+        actions={
+          <div className="flex items-center space-x-1 text-xs text-gray-500">
+            <Calendar className="h-4 w-4" />
+            <span>最終更新: 2025年8月29日 17:30</span>
+          </div>
+        }
+      />
 
       <Tabs value={activeTab} onValueChange={(v) => handleTabChange(v as any)} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -501,16 +502,16 @@ export function Dashboard({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="candidate-kpi" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+        <TabsContent value="candidate-kpi" className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-2">
             {kpiStats.map((stat) => (
               <KPICard key={stat.status} stat={stat} loading={loading} />
             ))}
           </div>
 
           {user?.role !== "ca_staff" && (
-            <Card>
-              <CardHeader>
+            <Card className="dashboard-performance-card">
+              <CardHeader className="pb-3">
                 <CardTitle className="flex items-center space-x-2">
                   <TrendingUp className="h-5 w-5 text-blue-600" />
                   <span>担当別パフォーマンス</span>
@@ -522,18 +523,18 @@ export function Dashboard({
                 </CardTitle>
                 <CardDescription>各キャリアアドバイザーの進捗ステータス別実績（決定月間累計降順）</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="dashboard-performance-table">
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>CA名</TableHead>
-                        <TableHead className="text-center">面談前</TableHead>
-                        <TableHead className="text-center">CA面談</TableHead>
-                        <TableHead className="text-center">書類選考</TableHead>
-                        <TableHead className="text-center">面接選考</TableHead>
-                        <TableHead className="text-center">内定</TableHead>
-                        <TableHead className="text-center">決定</TableHead>
+                      <TableRow className="dashboard-table-row">
+                        <TableHead className="py-2">CA名</TableHead>
+                        <TableHead className="text-center py-2">面談前</TableHead>
+                        <TableHead className="text-center py-2">CA面談</TableHead>
+                        <TableHead className="text-center py-2">書類選考</TableHead>
+                        <TableHead className="text-center py-2">面接選考</TableHead>
+                        <TableHead className="text-center py-2">内定</TableHead>
+                        <TableHead className="text-center py-2">決定</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -557,8 +558,8 @@ export function Dashboard({
                         </TableRow>
                       ) : (
                         filteredCAData.map((ca) => (
-                          <TableRow key={ca.id}>
-                            <TableCell>
+                          <TableRow key={ca.id} className="dashboard-table-row">
+                            <TableCell className="py-2">
                               <div className="flex items-center space-x-3">
                                 <Avatar className="h-8 w-8">
                                   <AvatarImage src={ca.avatar || "/placeholder.svg"} />
@@ -567,38 +568,38 @@ export function Dashboard({
                                 <span className="font-medium">{ca.name}</span>
                               </div>
                             </TableCell>
-                            <TableCell className="text-center">
-                              <div className="space-y-1">
+                            <TableCell className="text-center py-2">
+                              <div className="space-y-0.5">
                                 <div className="text-xl font-semibold">{nz(ca.mentanmaeToday)}</div>
                                 <div className="text-base text-gray-500">{nz(ca.mentanmaeMtd)}</div>
                               </div>
                             </TableCell>
-                            <TableCell className="text-center">
-                              <div className="space-y-1">
+                            <TableCell className="text-center py-2">
+                              <div className="space-y-0.5">
                                 <div className="text-xl font-semibold">{nz(ca.camendanToday)}</div>
                                 <div className="text-base text-gray-500">{nz(ca.camendanMtd)}</div>
                               </div>
                             </TableCell>
-                            <TableCell className="text-center">
-                              <div className="space-y-1">
+                            <TableCell className="text-center py-2">
+                              <div className="space-y-0.5">
                                 <div className="text-xl font-semibold">{nz(ca.shoruiToday)}</div>
                                 <div className="text-base text-gray-500">{nz(ca.shoruiMtd)}</div>
                               </div>
                             </TableCell>
-                            <TableCell className="text-center">
-                              <div className="space-y-1">
+                            <TableCell className="text-center py-2">
+                              <div className="space-y-0.5">
                                 <div className="text-xl font-semibold">{nz(ca.mensetsuToday)}</div>
                                 <div className="text-base text-gray-500">{nz(ca.mensetsuMtd)}</div>
                               </div>
                             </TableCell>
-                            <TableCell className="text-center">
-                              <div className="space-y-1">
+                            <TableCell className="text-center py-2">
+                              <div className="space-y-0.5">
                                 <div className="text-xl font-semibold">{nz(ca.naiteiToday)}</div>
                                 <div className="text-base text-gray-500">{nz(ca.naiteiMtd)}</div>
                               </div>
                             </TableCell>
-                            <TableCell className="text-center">
-                              <div className="space-y-1">
+                            <TableCell className="text-center py-2">
+                              <div className="space-y-0.5">
                                 <div className="text-xl font-semibold">{nz(ca.ketteiToday)}</div>
                                 <div className="text-base text-gray-500">{nz(ca.ketteiMtd)}</div>
                               </div>
@@ -613,16 +614,16 @@ export function Dashboard({
             </Card>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card className="dashboard-card">
+              <CardHeader className="pb-3">
                 <CardTitle className="flex items-center space-x-2">
                   <BarChart3 className="h-5 w-5 text-green-600" />
                   <span>広告流入</span>
                 </CardTitle>
                 <CardDescription>媒体・キャンペーン別の流入数</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <Table data-testid="ad-inflow-table">
                   <TableHeader>
                     <TableRow>
@@ -666,15 +667,15 @@ export function Dashboard({
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
+            <Card className="dashboard-card">
+              <CardHeader className="pb-3">
                 <CardTitle className="flex items-center space-x-2">
                   <Briefcase className="h-5 w-5 text-purple-600" />
                   <span>求人別申込み</span>
                 </CardTitle>
                 <CardDescription>求人毎の申込み数</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <Table data-testid="job-apply-table">
                   <TableHeader>
                     <TableRow>
@@ -720,16 +721,16 @@ export function Dashboard({
           </div>
         </TabsContent>
 
-        <TabsContent value="job-pipeline" className="space-y-6">
-          <Card>
-            <CardHeader>
+        <TabsContent value="job-pipeline" className="space-y-3">
+          <Card className="dashboard-card">
+            <CardHeader className="pb-3">
               <CardTitle className="flex items-center space-x-2">
                 <Filter className="h-5 w-5 text-blue-600" />
                 <span>フィルタ</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
                 <div className="space-y-2">
                   <Label>勤務地</Label>
                   <Popover>
@@ -830,7 +831,7 @@ export function Dashboard({
               </div>
 
               {jobFilter.period === "custom" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                   <div className="space-y-2">
                     <Label>開始日</Label>
                     <Input
@@ -864,8 +865,8 @@ export function Dashboard({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
+          <Card className="dashboard-card">
+            <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Briefcase className="h-5 w-5 text-purple-600" />
@@ -879,7 +880,7 @@ export function Dashboard({
                 求人毎の各ステータス人数（行クリック：求人詳細、人数クリック：選考管理）
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               <Table data-testid="job-pipeline-table">
                 <TableHeader>
                   <TableRow>
@@ -1023,4 +1024,34 @@ export function Dashboard({
       </Tabs>
     </div>
   )
+}
+
+// ダッシュボード専用のCSS調整
+const dashboardStyles = `
+  .dashboard-kpi-card .card-header {
+    padding: 0.75rem 1rem 0.25rem 1rem;
+  }
+  .dashboard-kpi-card .card-content {
+    padding: 0 1rem 0.75rem 1rem;
+  }
+  .dashboard-card .card-header {
+    padding: 1rem 1.5rem 0.75rem 1.5rem;
+  }
+  .dashboard-card .card-content {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+  }
+  .dashboard-performance-table .dashboard-table-row {
+    height: 3.5rem;
+  }
+  .dashboard-performance-table .dashboard-table-row td,
+  .dashboard-performance-table .dashboard-table-row th {
+    padding: 0.5rem 0.75rem;
+  }
+`
+
+// スタイルを適用
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style')
+  styleElement.textContent = dashboardStyles
+  document.head.appendChild(styleElement)
 }

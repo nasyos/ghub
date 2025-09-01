@@ -35,26 +35,63 @@ export function calculatePriorityStatus(candidate: Candidate): PriorityStatus | 
 
 // 要返信フラグを計算
 export function calculateRequiresResponse(candidate: Candidate): boolean {
-  // AI判定がACTION_REQUIREDで、かつ受信メッセージの場合
+  // 明示的にrequiresResponseフラグが設定されている場合を最優先
+  if (candidate.requiresResponse === true) {
+    return true
+  }
+  
+  // 明示的にfalseが設定されている場合はfalse
+  if (candidate.requiresResponse === false) {
+    return false
+  }
+  
+  // requiresResponseが未定義の場合、AI判定で決定
   if (candidate.lastMessageAIJudgment === "ACTION_REQUIRED" && candidate.lastMessageDirection === "in") {
     return true
   }
+  
   return false
 }
 
-// 要返信の背景色を計算
+// 要返信の背景色を計算（要返信=true かつ 24h以上の場合のみ赤塗り）
 export function getRequiresResponseBackgroundColor(candidate: Candidate): string {
-  if (!calculateRequiresResponse(candidate)) {
+  const needsReply = calculateRequiresResponse(candidate)
+  
+  // デバッグログ（開発時のみ）
+  if (process.env.NODE_ENV === 'development') {
+    const elapsedHours = getElapsedHours(candidate)
+    console.log(`候補者 ${candidate.name}:`, {
+      needsReply,
+      elapsedHours,
+      requiresResponse: candidate.requiresResponse,
+      lastMessageAIJudgment: candidate.lastMessageAIJudgment,
+      lastMessageDirection: candidate.lastMessageDirection,
+      lastMessageReceivedAt: candidate.lastMessageReceivedAt,
+      backgroundClass: needsReply ? (elapsedHours >= 24 ? 'bg-red-50' : elapsedHours >= 6 ? 'bg-amber-50' : '') : ''
+    })
+  }
+  
+  // 要返信=falseの場合は常に白（背景色なし）
+  if (!needsReply) {
     return ""
   }
 
   const now = new Date()
   const lastMessageTime = new Date(candidate.lastMessageReceivedAt)
-  const hoursDiff = (now.getTime() - lastMessageTime.getTime()) / (1000 * 60 * 60)
+  const elapsedHours = Math.round((now.getTime() - lastMessageTime.getTime()) / (1000 * 60 * 60) * 10) / 10
 
-  if (hoursDiff <= 6) return "bg-white"
-  if (hoursDiff <= 24) return "bg-orange-50"
-  return "bg-red-50"
+  // 要返信=trueの場合の背景色
+  if (elapsedHours >= 24) return "bg-red-50"      // 24h超: 赤
+  if (elapsedHours >= 6) return "bg-amber-50"     // 6-24h: 薄橙
+  return ""  // 0-6h: 白（背景色なし）
+}
+
+// 経過時間を計算（時間単位、小数第一位四捨五入）
+export function getElapsedHours(candidate: Candidate): number {
+  const now = new Date()
+  const lastMessageTime = new Date(candidate.lastMessageReceivedAt)
+  const elapsedHours = (now.getTime() - lastMessageTime.getTime()) / (1000 * 60 * 60)
+  return Math.round(elapsedHours * 10) / 10
 }
 
 // 経過時間のテキストを取得

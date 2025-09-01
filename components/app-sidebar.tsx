@@ -101,8 +101,7 @@ export function AppSidebar({ currentPage, goto, ...props }: AppSidebarProps) {
           <div className="text-left">
             <div className="font-bold text-lg leading-tight text-gray-900">G-Hub</div>
             <div className="text-xs text-gray-700 font-medium leading-tight">
-              GlobalHire Hub<br />
-              外国人材紹介管理システム
+              GlobalHire Hub
             </div>
           </div>
         </div>

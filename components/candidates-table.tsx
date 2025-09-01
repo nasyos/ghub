@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Candidate, CandidateFilters } from "@/lib/candidates/types"
 import { 
   calculateDelayStatus, 
@@ -12,13 +12,16 @@ import {
   sortCandidates,
   filterCandidates,
   calculateRequiresResponse,
-  getRequiresResponseBackgroundColor
+  getRequiresResponseBackgroundColor,
+  getElapsedHours
 } from "@/lib/candidates/utils"
 import { candidatesApi } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -37,7 +40,6 @@ import {
 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
 interface CandidatesTableProps {
@@ -52,6 +54,15 @@ export function CandidatesTable({ onSelectCandidate, onNavigateToDetail }: Candi
   const [filters, setFilters] = useState<CandidateFilters>({})
   const [sortBy, setSortBy] = useState<string>("priority")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
+  
+  // 要返信のみフィルタ（URL同期対応）
+  const [needsReplyOnly, setNeedsReplyOnly] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      return params.get("needsReplyOnly") === "1"
+    }
+    return false
+  })
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [newCandidate, setNewCandidate] = useState({
     name: "",
@@ -64,9 +75,37 @@ export function CandidatesTable({ onSelectCandidate, onNavigateToDetail }: Candi
     assignedCA: ""
   })
 
+  // URL同期
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      if (needsReplyOnly) {
+        params.set("needsReplyOnly", "1")
+      } else {
+        params.delete("needsReplyOnly")
+      }
+      const newUrl = `${window.location.pathname}?${params.toString()}`
+      window.history.replaceState(null, "", newUrl)
+    }
+  }, [needsReplyOnly])
+
   useEffect(() => {
     loadCandidates()
-  }, [filters, sortBy])
+  }, [filters, sortBy, needsReplyOnly])
+
+  // フィルタされた候補者リスト
+  const filteredCandidates = useMemo(() => {
+    return candidates.filter(candidate => {
+      // 要返信のみフィルタ
+      if (needsReplyOnly) {
+        const requiresResponse = calculateRequiresResponse(candidate)
+        if (!requiresResponse) return false
+      }
+      
+      // 他のフィルタも適用（既存のfilterCandidates関数を使用）
+      return filterCandidates([candidate], filters).length > 0
+    })
+  }, [candidates, needsReplyOnly, filters])
 
   const loadCandidates = async () => {
     setLoading(true)
@@ -155,13 +194,7 @@ export function CandidatesTable({ onSelectCandidate, onNavigateToDetail }: Candi
     }
   }
 
-  const handleRequiresResponseFilterChange = (value: string) => {
-    if (value === "all") {
-      setFilters(prev => ({ ...prev, requiresResponse: undefined }))
-    } else {
-      setFilters(prev => ({ ...prev, requiresResponse: value === "true" }))
-    }
-  }
+
 
   const handleSortChange = (column: string) => {
     if (sortBy === column) {
@@ -294,7 +327,7 @@ export function CandidatesTable({ onSelectCandidate, onNavigateToDetail }: Candi
     
     const csvContent = [
       headers.join(','),
-      ...candidates.map(candidate => [
+      ...filteredCandidates.map(candidate => [
         candidate.candidateNo,
         candidate.name,
         candidate.country,
@@ -339,7 +372,7 @@ export function CandidatesTable({ onSelectCandidate, onNavigateToDetail }: Candi
 
   return (
     <TooltipProvider>
-      <div className="space-y-4">
+      <div className="space-y-3 c-candidates__table">
         {/* CSV機能ボタン */}
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleDownloadFormat}>
@@ -486,9 +519,9 @@ export function CandidatesTable({ onSelectCandidate, onNavigateToDetail }: Candi
         </div>
 
         {/* フィルター */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* 検索バー */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -498,10 +531,20 @@ export function CandidatesTable({ onSelectCandidate, onNavigateToDetail }: Candi
                 className="pl-10"
               />
             </div>
+            
+            {/* 要返信のみフィルタ */}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="needs-reply-only"
+                checked={needsReplyOnly}
+                onCheckedChange={(checked) => setNeedsReplyOnly(Boolean(checked))}
+              />
+              <Label htmlFor="needs-reply-only" className="text-sm">要返信のみ</Label>
+            </div>
           </div>
 
           {/* フィルター行 */}
-          <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
             <Select value={filters.status?.[0] || "all"} onValueChange={handleStatusFilterChange}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="ステータス" />
@@ -533,16 +576,7 @@ export function CandidatesTable({ onSelectCandidate, onNavigateToDetail }: Candi
               </SelectContent>
             </Select>
 
-            <Select value={filters.requiresResponse !== undefined ? filters.requiresResponse.toString() : "all"} onValueChange={handleRequiresResponseFilterChange}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="要返信" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">すべて</SelectItem>
-                <SelectItem value="true">要返信のみ</SelectItem>
-                <SelectItem value="false">要返信以外</SelectItem>
-              </SelectContent>
-            </Select>
+
 
             <Select value={filters.country?.[0] || "all"} onValueChange={handleCountryFilterChange}>
               <SelectTrigger className="w-40">
@@ -639,6 +673,15 @@ export function CandidatesTable({ onSelectCandidate, onNavigateToDetail }: Candi
           </div>
         </div>
 
+        {/* 件数表示 */}
+        <div className="flex justify-between items-center text-sm text-muted-foreground mb-4">
+          <span>
+            {filteredCandidates.length}件を表示中
+            {needsReplyOnly && <span className="ml-2 text-amber-600">（要返信のみ）</span>}
+          </span>
+          <span>総候補者数: {candidates.length}件</span>
+        </div>
+
         {/* テーブル */}
         <div className="border rounded-lg">
           <Table>
@@ -681,7 +724,7 @@ export function CandidatesTable({ onSelectCandidate, onNavigateToDetail }: Candi
               </TableRow>
             </TableHeader>
             <TableBody>
-              {candidates.map((candidate) => {
+              {filteredCandidates.map((candidate) => {
                 const delayStatus = calculateDelayStatus(candidate)
                 const priorityStatus = calculatePriorityStatus(candidate)
                 const elapsedTime = getElapsedTimeText(candidate.lastMessageReceivedAt)
@@ -694,13 +737,7 @@ export function CandidatesTable({ onSelectCandidate, onNavigateToDetail }: Candi
                 return (
                   <TableRow 
                     key={candidate.id}
-                    className={`cursor-pointer hover:bg-muted/50 ${
-                      priorityStatus === "critical" || priorityStatus === "overdue" 
-                        ? "bg-red-50" 
-                        : priorityStatus === "danger" 
-                        ? "bg-orange-50" 
-                        : responseBackgroundColor
-                    }`}
+                    className={`cursor-pointer hover:bg-muted/50 ${responseBackgroundColor}`}
                     onClick={() => onNavigateToDetail?.(candidate.id)}
                   >
                     <TableCell>
@@ -806,7 +843,7 @@ export function CandidatesTable({ onSelectCandidate, onNavigateToDetail }: Candi
             </TableBody>
           </Table>
           
-          {candidates.length === 0 && (
+          {filteredCandidates.length === 0 && (
             <div className="flex items-center justify-center h-32 text-muted-foreground">
               候補者が見つかりません
             </div>

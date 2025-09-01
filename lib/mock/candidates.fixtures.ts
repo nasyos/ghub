@@ -4,6 +4,7 @@ export const MOCK_CANDIDATES: Candidate[] = [
   {
     id: "1",
     candidateNo: "C001",
+    candidateNumber: "C001",
     name: "John Smith",
     country: "アメリカ",
     gender: "男性",
@@ -15,8 +16,8 @@ export const MOCK_CANDIDATES: Candidate[] = [
     residenceStatus: "技術・人文知識・国際業務",
     residenceExpiry: "2025-03-15",
     lastContact: "2024-01-15 14:30",
-    lastMessageReceivedAt: "2025-08-20T10:30:00Z", // 2時間前
-    nextScheduledDate: "2025-09-15T14:00:00Z", // 未来の日付
+    lastMessageReceivedAt: "2025-08-30T10:30:00Z", // 2日前（48時間経過 - 赤色対象）
+    nextScheduledDate: "2025-09-05T14:00:00Z", // 4日後
     avatar: "/placeholder.svg?height=40&width=40",
     residence: "東京都渋谷区",
     applicationRoute: "Facebook広告A",
@@ -32,10 +33,17 @@ export const MOCK_CANDIDATES: Candidate[] = [
     requiresResponse: true,
     lastMessageAIJudgment: "ACTION_REQUIRED",
     lastMessageDirection: "in",
+    sourceChannel: "Facebook広告A",
+    otherSnsLink: "https://instagram.com/johnsmith_dev",
+    customFields: [
+      { id: "custom_1", title: "技術スキル", value: "React, TypeScript, Node.js, Python" },
+      { id: "custom_2", title: "特記事項", value: "リモートワーク希望、週3日勤務も可能" }
+    ],
   },
   {
     id: "2",
     candidateNo: "C002",
+    candidateNumber: "C002",
     name: "Maria Garcia",
     country: "スペイン",
     gender: "女性",
@@ -47,8 +55,8 @@ export const MOCK_CANDIDATES: Candidate[] = [
     residenceStatus: "技術・人文知識・国際業務",
     residenceExpiry: "2024-12-20",
     lastContact: "2024-01-14 16:45",
-    lastMessageReceivedAt: "2025-08-19T15:20:00Z", // 1日前
-    nextScheduledDate: "2025-08-22T10:00:00Z", // 2日後
+    lastMessageReceivedAt: "2025-08-31T15:20:00Z", // 12時間前（24時間未満 - 白色）
+    nextScheduledDate: "2025-09-05T10:00:00Z", // 4日後
     avatar: "/placeholder.svg?height=40&width=40",
     residence: "大阪府大阪市",
     applicationRoute: "Instagram広告",
@@ -64,10 +72,14 @@ export const MOCK_CANDIDATES: Candidate[] = [
     requiresResponse: false,
     lastMessageAIJudgment: "INFORMATIONAL",
     lastMessageDirection: "in",
+    sourceChannel: "Instagram広告",
+    otherSnsLink: "https://twitter.com/maria_garcia_es",
+    customFields: [],
   },
   {
     id: "3",
     candidateNo: "C003",
+    candidateNumber: "C003",
     name: "Chen Wei",
     country: "中国",
     gender: "男性",
@@ -79,8 +91,8 @@ export const MOCK_CANDIDATES: Candidate[] = [
     residenceStatus: "留学",
     residenceExpiry: "2024-08-30",
     lastContact: "2024-01-13 10:20",
-    lastMessageReceivedAt: "2025-08-17T09:15:00Z", // 3日前
-    nextScheduledDate: "2025-10-05T09:00:00Z", // 未来の日付
+    lastMessageReceivedAt: "2025-08-31T10:00:00Z", // 1日前（24時間経過だが要返信=true - 薄橙色）
+    nextScheduledDate: "2025-09-04T14:00:00Z", // 3日後
     avatar: "/placeholder.svg?height=40&width=40",
     residence: "東京都新宿区",
     applicationRoute: "LinkedIn広告",
@@ -96,10 +108,16 @@ export const MOCK_CANDIDATES: Candidate[] = [
     requiresResponse: true,
     lastMessageAIJudgment: "ACTION_REQUIRED",
     lastMessageDirection: "in",
+    sourceChannel: "LinkedIn広告",
+    otherSnsLink: "",
+    customFields: [
+      { id: "custom_3", title: "デザインツール", value: "Figma, Photoshop, Illustrator" }
+    ],
   },
   {
     id: "4",
     candidateNo: "C004",
+    candidateNumber: "C004",
     name: "Ahmed Hassan",
     country: "エジプト",
     gender: "男性",
@@ -111,8 +129,8 @@ export const MOCK_CANDIDATES: Candidate[] = [
     residenceStatus: "技術・人文知識・国際業務",
     residenceExpiry: "2025-06-10",
     lastContact: "2024-01-12 09:15",
-    lastMessageReceivedAt: "2025-08-15T11:30:00Z", // 5日前
-    nextScheduledDate: "2025-08-21T13:00:00Z", // 当日
+    lastMessageReceivedAt: "2025-08-31T11:30:00Z", // 12時間前（24時間未満 - 白色）
+    nextScheduledDate: "2025-09-04T13:00:00Z", // 3日後
     avatar: "/placeholder.svg?height=40&width=40",
     residence: "愛知県名古屋市",
     applicationRoute: "Facebook広告B",
@@ -128,10 +146,14 @@ export const MOCK_CANDIDATES: Candidate[] = [
     requiresResponse: false,
     lastMessageAIJudgment: "GREETING",
     lastMessageDirection: "in",
+    sourceChannel: "Facebook広告B",
+    otherSnsLink: "",
+    customFields: [],
   },
   {
     id: "5",
     candidateNo: "C005",
+    candidateNumber: "C005",
     name: "Lisa Johnson",
     country: "カナダ",
     gender: "女性",
@@ -143,8 +165,8 @@ export const MOCK_CANDIDATES: Candidate[] = [
     residenceStatus: "ワーキングホリデー",
     residenceExpiry: "2024-11-15",
     lastContact: "2024-01-11 13:25",
-    lastMessageReceivedAt: "2025-08-20T08:45:00Z", // 4時間前
-    nextScheduledDate: "2025-09-20T11:00:00Z", // 未来の日付
+    lastMessageReceivedAt: "2025-08-31T12:45:00Z", // 12時間前（6-24時間 - 薄橙色対象）
+    nextScheduledDate: "2025-09-05T11:00:00Z", // 4日後
     avatar: "/placeholder.svg?height=40&width=40",
     residence: "東京都港区",
     applicationRoute: "Twitter広告",
@@ -160,10 +182,16 @@ export const MOCK_CANDIDATES: Candidate[] = [
     requiresResponse: true,
     lastMessageAIJudgment: "ACTION_REQUIRED",
     lastMessageDirection: "in",
+    sourceChannel: "Twitter広告",
+    otherSnsLink: "https://linkedin.com/in/lisa-johnson",
+    customFields: [
+      { id: "custom_4", title: "語学スキル", value: "英語ネイティブ、日本語N3レベル" }
+    ],
   },
   {
     id: "6",
     candidateNo: "C006",
+    candidateNumber: "C006",
     name: "Yuki Tanaka",
     country: "日本",
     gender: "女性",
@@ -175,8 +203,8 @@ export const MOCK_CANDIDATES: Candidate[] = [
     residenceStatus: "日本人",
     residenceExpiry: "無期限",
     lastContact: "2024-01-10 16:20",
-    lastMessageReceivedAt: "2025-08-14T14:10:00Z", // 6日前
-    nextScheduledDate: "2025-08-20T15:30:00Z", // 期日超過
+    lastMessageReceivedAt: "2025-08-27T14:10:00Z", // 5日前（120時間経過だが要返信=false - 白色）
+    nextScheduledDate: "2025-09-06T15:30:00Z", // 5日後
     avatar: "/placeholder.svg?height=40&width=40",
     residence: "東京都世田谷区",
     applicationRoute: "直接応募",
@@ -192,10 +220,14 @@ export const MOCK_CANDIDATES: Candidate[] = [
     requiresResponse: false,
     lastMessageAIJudgment: "THANK_YOU",
     lastMessageDirection: "in",
+    sourceChannel: "直接応募",
+    otherSnsLink: "",
+    customFields: [],
   },
   {
     id: "7",
     candidateNo: "C007",
+    candidateNumber: "C007",
     name: "David Kim",
     country: "韓国",
     gender: "男性",
@@ -207,8 +239,8 @@ export const MOCK_CANDIDATES: Candidate[] = [
     residenceStatus: "技術・人文知識・国際業務",
     residenceExpiry: "2025-01-20",
     lastContact: "2024-01-09 11:30",
-    lastMessageReceivedAt: "2025-08-20T12:00:00Z", // 30分前
-    nextScheduledDate: "2025-08-30T10:00:00Z", // 10日後
+    lastMessageReceivedAt: "2025-08-28T12:00:00Z", // 4日前（96時間経過 - 赤色対象）
+    nextScheduledDate: "2025-09-04T10:00:00Z", // 3日後
     avatar: "/placeholder.svg?height=40&width=40",
     residence: "東京都品川区",
     applicationRoute: "Facebook広告C",
@@ -221,9 +253,15 @@ export const MOCK_CANDIDATES: Candidate[] = [
     page_id: 1,
     external_id: "EXT007",
     notes: "ITエンジニア経験4年、韓国語・英語対応",
-    requiresResponse: false,
-    lastMessageAIJudgment: "INFORMATIONAL",
-    lastMessageDirection: "out",
+    requiresResponse: true,
+    lastMessageAIJudgment: "ACTION_REQUIRED",
+    lastMessageDirection: "in",
+    sourceChannel: "Facebook広告C",
+    otherSnsLink: "https://github.com/davidkim-dev",
+    customFields: [
+      { id: "custom_5", title: "開発経験", value: "バックエンド開発4年、AWS経験あり" },
+      { id: "custom_6", title: "希望条件", value: "フルリモート希望、時給3000円以上" }
+    ],
   },
 ]
 

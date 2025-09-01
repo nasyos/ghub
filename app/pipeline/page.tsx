@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { PipelineTable } from "@/components/pipeline/pipeline-table"
-import { PipelineDetail } from "@/components/pipeline/pipeline-detail"
 import { PipelineFilters } from "@/components/pipeline/pipeline-filters"
+import { CandidateDrawer } from "@/components/pipeline/candidate-drawer"
+import { useCandidateDrawer } from "@/components/pipeline/use-candidate-drawer"
 import { ApplicationRow, PipelineFilters as PipelineFiltersType } from "@/lib/pipeline/types"
 import { pipelineApi } from "@/lib/api"
 import { useToast } from "@/components/ui/use-toast"
@@ -12,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { X, Building, Users, Clock } from "lucide-react"
+import { PageHeader } from "@/components/common/PageHeader"
 
 export default function PipelinePage() {
   const searchParams = useSearchParams()
@@ -19,11 +21,9 @@ export default function PipelinePage() {
   const { toast } = useToast()
   
   const [applications, setApplications] = useState<ApplicationRow[]>([])
-  const [selectedApplication, setSelectedApplication] = useState<ApplicationRow | null>(null)
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState<PipelineFiltersType>({})
   const [jobFilterActive, setJobFilterActive] = useState(false)
-  const [rightPaneActiveTab, setRightPaneActiveTab] = useState<string>("overview")
   const [jobFilterInfo, setJobFilterInfo] = useState<{ 
     id: string
     title: string; 
@@ -35,7 +35,9 @@ export default function PipelinePage() {
       overdue: number;
     }
   } | null>(null)
-  const [isRightPaneOverlay, setIsRightPaneOverlay] = useState(false)
+
+  // Drawerフック
+  const { isOpen, candidateId, openDrawer, closeDrawer } = useCandidateDrawer()
 
   // URLパラメータから初期フィルタを設定
   useEffect(() => {
@@ -102,8 +104,8 @@ export default function PipelinePage() {
 
   const handleFilterChange = (newFilters: PipelineFiltersType) => {
     setFilters(newFilters)
-    // フィルタ変更時は選択をクリア
-    setSelectedApplication(null)
+    // フィルタ変更時はDrawerを閉じる
+    closeDrawer()
   }
 
   const handleJobFilterRemove = () => {
@@ -113,6 +115,7 @@ export default function PipelinePage() {
     })
     setJobFilterActive(false)
     setJobFilterInfo(null)
+    closeDrawer()
     // 横断版に遷移
     router.push("/pipeline")
   }
@@ -123,21 +126,12 @@ export default function PipelinePage() {
     }
   }
 
-  // レスポンシブ対応
-  useEffect(() => {
-    const handleResize = () => {
-      setIsRightPaneOverlay(window.innerWidth < 1280)
-    }
-    
-    handleResize()
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+
 
   return (
-    <div className={`h-full ${isRightPaneOverlay ? 'grid grid-cols-[1fr]' : 'grid grid-cols-[1fr_minmax(380px,420px)]'}`}>
-      {/* 中央: フィルタとテーブル */}
-      <div className="flex flex-col">
+    <div className="h-full">
+      {/* メインコンテンツ: フィルタとテーブル */}
+      <div className="flex flex-col h-full">
         {/* ヘッダー */}
         <div className="border-b p-3">
           {jobFilterActive && jobFilterInfo ? (
@@ -192,12 +186,10 @@ export default function PipelinePage() {
             </div>
           ) : (
             // 横断版モード
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-xl font-bold">選考管理</h1>
-                <p className="text-sm text-muted-foreground">候補者×求人の選考案件を横断で管理します</p>
-              </div>
-            </div>
+            <PageHeader 
+              title="選考管理"
+              description="候補者×求人の選考案件を横断で管理します"
+            />
           )}
         </div>
 
@@ -213,67 +205,25 @@ export default function PipelinePage() {
           <PipelineTable
             applications={applications}
             loading={loading}
-            selectedApplication={selectedApplication}
-            onSelectApplication={setSelectedApplication}
+            onRowClick={(application) => openDrawer(application.id)}
             jobFilterActive={jobFilterActive}
-            onOpenRecommendTab={(app) => {
-              setSelectedApplication(app)
-              setRightPaneActiveTab("recommend")
-            }}
-            onOpenProgressTab={(app) => {
-              setSelectedApplication(app)
-              setRightPaneActiveTab("progress")
-            }}
           />
         </div>
       </div>
 
-      {/* 右側: 詳細ペイン */}
-      {selectedApplication && (
-        <>
-          {isRightPaneOverlay ? (
-            // オーバーレイ表示
-            <>
-              <div 
-                className="fixed inset-0 bg-black/50 z-40"
-                onClick={() => setSelectedApplication(null)}
-              />
-              <div className="fixed right-0 top-0 w-[400px] h-full bg-white border-l z-50">
-                <PipelineDetail
-                  application={selectedApplication}
-                  onClose={() => setSelectedApplication(null)}
-                  initialActiveTab={rightPaneActiveTab}
-                  onApplicationUpdated={(updatedApplication) => {
-                    setApplications(prev => 
-                      prev.map(app => 
-                        app.id === updatedApplication.id ? updatedApplication : app
-                      )
-                    )
-                    setSelectedApplication(updatedApplication)
-                  }}
-                />
-              </div>
-            </>
-          ) : (
-            // 通常表示
-            <div className="border-l bg-white">
-              <PipelineDetail
-                application={selectedApplication}
-                onClose={() => setSelectedApplication(null)}
-                initialActiveTab={rightPaneActiveTab}
-                onApplicationUpdated={(updatedApplication) => {
-                  setApplications(prev => 
-                    prev.map(app => 
-                      app.id === updatedApplication.id ? updatedApplication : app
-                    )
-                  )
-                  setSelectedApplication(updatedApplication)
-                }}
-              />
-            </div>
-          )}
-        </>
-      )}
+      {/* Drawer */}
+      <CandidateDrawer
+        isOpen={isOpen}
+        candidateId={candidateId}
+        onClose={closeDrawer}
+        onApplicationUpdated={(updatedApplication) => {
+          setApplications(prev => 
+            prev.map(app => 
+              app.id === updatedApplication.id ? updatedApplication : app
+            )
+          )
+        }}
+      />
     </div>
   )
 }

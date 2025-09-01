@@ -185,3 +185,5 @@ CREATE INDEX IF NOT EXISTS idx_candidate_job_links_linked_at ON candidate_job_li
 CREATE INDEX IF NOT EXISTS idx_candidate_job_links_recommended_at ON candidate_job_links(recommended_at);
 
 
+
+

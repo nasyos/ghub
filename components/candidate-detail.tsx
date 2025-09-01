@@ -330,6 +330,61 @@ export function CandidateDetail({ candidate, onBack, hideHeader = false }: Candi
   const [ocrData, setOcrData] = useState<any>({})
 
   const [isEditingBasicInfo, setIsEditingBasicInfo] = useState(false)
+  
+  // CA追加項目の状態管理
+  const [customFields, setCustomFields] = useState<Array<{ id: string; title: string; value: string }>>(
+    candidate?.customFields || []
+  )
+  
+  // 権限制御
+  const { user } = useAuth()
+  const canEditCAFields = user?.role === 'admin' || user?.role === 'ca'
+  
+  // CA追加項目の操作関数
+  const addCustomField = () => {
+    const newField = {
+      id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      title: "",
+      value: ""
+    }
+    setCustomFields(prev => [...prev, newField])
+  }
+  
+  const updateCustomField = (id: string, field: 'title' | 'value', newValue: string) => {
+    setCustomFields(prev => 
+      prev.map(item => 
+        item.id === id ? { ...item, [field]: newValue } : item
+      )
+    )
+  }
+  
+  const removeCustomField = (id: string) => {
+    setCustomFields(prev => prev.filter(item => item.id !== id))
+  }
+  
+  // バリデーション関数
+  const validateUrl = (url: string): boolean => {
+    if (!url) return true // 空欄は有効
+    try {
+      const urlObj = new URL(url)
+      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:'
+    } catch {
+      return false
+    }
+  }
+  
+  const validateCustomField = (title: string, value: string): { isValid: boolean; error?: string } => {
+    if (title.length === 0) {
+      return { isValid: false, error: "タイトルは必須です" }
+    }
+    if (title.length > 100) {
+      return { isValid: false, error: "タイトルは100文字以内で入力してください" }
+    }
+    if (value.length > 2000) {
+      return { isValid: false, error: "内容は2000文字以内で入力してください" }
+    }
+    return { isValid: true }
+  }
   const [basicInfo, setBasicInfo] = useState({
     name: candidate?.name || "",
     nationality: candidate?.country || "",
@@ -343,6 +398,8 @@ export function CandidateDetail({ candidate, onBack, hideHeader = false }: Candi
     applicationRoute: candidate?.applicationRoute || "",
     assignedCA: candidate?.assignedCA || "",
     facebookLink: candidate?.facebookProfile || "",
+    sourceChannel: candidate?.sourceChannel || "", // 流入経路
+    otherSnsLink: candidate?.otherSnsLink || "", // 他SNSリンク
     birthdate: "",
     residenceCardNo: "",
     addressDetail: "",
@@ -476,6 +533,8 @@ export function CandidateDetail({ candidate, onBack, hideHeader = false }: Candi
         applicationRoute: candidate.applicationRoute,
         assignedCA: candidate.assignedCA,
         facebookLink: candidate.facebookProfile,
+        sourceChannel: candidate.sourceChannel || "",
+        otherSnsLink: candidate.otherSnsLink || "",
         birthdate: "",
         residenceCardNo: "",
         addressDetail: "",
@@ -938,8 +997,40 @@ export function CandidateDetail({ candidate, onBack, hideHeader = false }: Candi
   }
 
   const handleSaveBasicInfo = () => {
-    // ここで実際の保存処理を行う
-    console.log("基本情報を保存:", basicInfo)
+    // バリデーション
+    if (!validateUrl(basicInfo.otherSnsLink)) {
+      toast({
+        title: "入力エラー",
+        description: "他SNSリンクは有効なURL形式で入力してください",
+        variant: "destructive",
+      })
+      return
+    }
+    
+    // カスタムフィールドのバリデーション
+    for (const field of customFields) {
+      const validation = validateCustomField(field.title, field.value)
+      if (!validation.isValid) {
+        toast({
+          title: "入力エラー",
+          description: validation.error,
+          variant: "destructive",
+        })
+        return
+      }
+    }
+    
+    // 保存処理
+    const updatedCandidate = {
+      ...basicInfo,
+      customFields,
+    }
+    
+    console.log("基本情報を保存:", updatedCandidate)
+    toast({
+      title: "保存完了",
+      description: "基本情報を保存しました",
+    })
     setIsEditingBasicInfo(false)
   }
 
@@ -1255,6 +1346,15 @@ export function CandidateDetail({ candidate, onBack, hideHeader = false }: Candi
                           />
                         </div>
                         <div>
+                          <Label className="text-sm font-medium text-gray-600">流入経路</Label>
+                          <Input
+                            value={basicInfo.sourceChannel}
+                            onChange={(e) => setBasicInfo({ ...basicInfo, sourceChannel: e.target.value })}
+                            className="mt-1"
+                            placeholder="Facebook広告、Instagram、直接応募など"
+                          />
+                        </div>
+                        <div>
                           <Label className="text-sm font-medium text-gray-600">希望勤務地</Label>
                           <Input
                             value={basicInfo.desiredLocation}
@@ -1376,6 +1476,31 @@ export function CandidateDetail({ candidate, onBack, hideHeader = false }: Candi
                             </Button>
                           </div>
                         </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-600">他SNSリンク</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              value={basicInfo.otherSnsLink}
+                              onChange={(e) => setBasicInfo({ ...basicInfo, otherSnsLink: e.target.value })}
+                              className="mt-1 flex-1"
+                              placeholder="https://instagram.com/username または https://twitter.com/username"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (basicInfo.otherSnsLink) {
+                                  window.open(basicInfo.otherSnsLink, "_blank", "noopener,noreferrer")
+                                }
+                              }}
+                              disabled={!basicInfo.otherSnsLink}
+                              className="mt-1"
+                            >
+                              遷移
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                       <div className="flex gap-2 pt-4">
                         <Button onClick={handleSaveBasicInfo}>
@@ -1417,6 +1542,12 @@ export function CandidateDetail({ candidate, onBack, hideHeader = false }: Candi
                         <Label className="text-sm font-medium text-gray-600">居住地</Label>
                         <p>{basicInfo.residence}</p>
                       </div>
+                      {basicInfo.sourceChannel && (
+                        <div>
+                          <Label className="text-sm font-medium text-gray-600">流入経路</Label>
+                          <p>{basicInfo.sourceChannel}</p>
+                        </div>
+                      )}
                       <div>
                         <Label className="text-sm font-medium text-gray-600">希望勤務地</Label>
                         <p>{basicInfo.desiredLocation}</p>
@@ -1457,6 +1588,32 @@ export function CandidateDetail({ candidate, onBack, hideHeader = false }: Candi
                           </Button>
                         </div>
                       </div>
+                      {basicInfo.otherSnsLink && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-600">他SNSリンク</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              value={basicInfo.otherSnsLink}
+                              readOnly
+                              className="flex-1 bg-gray-50"
+                              placeholder="未設定"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (basicInfo.otherSnsLink) {
+                                  window.open(basicInfo.otherSnsLink, "_blank", "noopener,noreferrer")
+                                }
+                              }}
+                              disabled={!basicInfo.otherSnsLink}
+                            >
+                              遷移
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                       <div>
                         <Label className="text-sm font-medium text-gray-600">最終連絡日時</Label>
                         <p>{candidate.lastContact}</p>
@@ -1611,6 +1768,73 @@ export function CandidateDetail({ candidate, onBack, hideHeader = false }: Candi
                     </div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* CA追加項目セクション */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="h-5 w-5" />
+                  CA追加項目
+                </CardTitle>
+                {canEditCAFields && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={addCustomField}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    追加
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {customFields.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    追加項目がありません
+                  </p>
+                ) : (
+                  customFields.map((field) => (
+                    <div key={field.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Input
+                          value={field.title}
+                          onChange={(e) => updateCustomField(field.id, 'title', e.target.value)}
+                          placeholder="項目タイトル（例: 特記事項、スキル詳細など）"
+                          className="font-medium"
+                          maxLength={100}
+                          readOnly={!canEditCAFields}
+                        />
+                        {canEditCAFields && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeCustomField(field.id)}
+                            className="ml-2"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      <Textarea
+                        value={field.value}
+                        onChange={(e) => updateCustomField(field.id, 'value', e.target.value)}
+                        placeholder="内容を入力してください..."
+                        className="min-h-[80px]"
+                        maxLength={2000}
+                        readOnly={!canEditCAFields}
+                      />
+                      <div className="text-xs text-muted-foreground text-right">
+                        {field.value.length}/2000文字
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
