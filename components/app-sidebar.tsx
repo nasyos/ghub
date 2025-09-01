@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { MessageSquare, BarChart3, Users, Settings, LogOut, Briefcase, UserCheck, Building2 } from "lucide-react"
+import { MessageSquare, BarChart3, Users, Settings, LogOut, Briefcase, UserCheck, Building2, GitBranch } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -20,11 +20,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
+import type { PageId } from "@/contexts/auth-context"
 import { useNotifications } from "@/contexts/notification-context"
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   currentPage: string
-  goto: (page: string) => void
+  goto: (page: PageId) => void
 }
 
 const navigationItems = [
@@ -45,6 +46,12 @@ const navigationItems = [
     id: "candidates",
     icon: Users,
     testId: "nav-candidates",
+  },
+  {
+    title: "選考管理",
+    id: "pipeline",
+    icon: GitBranch,
+    testId: "nav-pipeline",
   },
   {
     title: "求人管理",
@@ -80,7 +87,7 @@ export function AppSidebar({ currentPage, goto, ...props }: AppSidebarProps) {
     logout()
   }
 
-  const handlePageChange = (pageId: string) => {
+  const handlePageChange = (pageId: PageId) => {
     if (pageId === "candidates") {
       markAllRead("candidates")
     }
@@ -90,20 +97,23 @@ export function AppSidebar({ currentPage, goto, ...props }: AppSidebarProps) {
   return (
     <Sidebar {...props}>
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-3 px-4 py-3">
+        <div className="flex items-center gap-2 px-3 py-3">
           <div className="text-left">
-            <div className="font-bold text-xl leading-tight text-gray-900">G-Hub</div>
-            <div className="text-sm text-gray-700 font-medium leading-tight">GlobalHire Hub 外国人材紹介システム</div>
+            <div className="font-bold text-lg leading-tight text-gray-900">G-Hub</div>
+            <div className="text-xs text-gray-700 font-medium leading-tight">
+              GlobalHire Hub<br />
+              外国人材紹介管理システム
+            </div>
           </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>メニュー</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-3 text-xs">メニュー</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map((item) => {
-                if (!canSeePage?.(item.id)) {
+                if (!canSeePage?.(item.id as PageId)) {
                   return null
                 }
 
@@ -111,11 +121,12 @@ export function AppSidebar({ currentPage, goto, ...props }: AppSidebarProps) {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       isActive={currentPage === item.id}
-                      onClick={() => handlePageChange(item.id)}
+                      onClick={() => handlePageChange(item.id as PageId)}
                       data-testid={item.testId}
+                      className="text-sm"
                     >
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <span className="text-xs">{item.title}</span>
                       {item.id === "candidates" && unread.candidates > 0 && (
                         <span
                           data-testid="nav-badge-candidates"
@@ -133,25 +144,18 @@ export function AppSidebar({ currentPage, goto, ...props }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border">
-        <div className="p-4 space-y-3">
-          <div className="flex items-center space-x-3">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={user?.avatar || "/placeholder.svg"} />
-              <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-              <Badge
-                variant={user?.role === "admin" ? "default" : user?.role === "ca_manager" ? "secondary" : "outline"}
-                className="text-xs mt-1"
-              >
-                {user?.role === "admin" ? "管理者" : user?.role === "ca_manager" ? "CA（管理）" : "CA（担当）"}
-              </Badge>
-            </div>
+        <div className="p-2 space-y-2">
+          <div className="text-center">
+            <p className="text-xs font-medium truncate">{user?.name}</p>
+            <Badge
+              variant={user?.role === "admin" ? "default" : user?.role === "ca_manager" ? "secondary" : "outline"}
+              className="text-xs mt-1"
+            >
+              {user?.role === "admin" ? "管理者" : user?.role === "ca_manager" ? "CA（管理）" : "CA（担当）"}
+            </Badge>
           </div>
-          <Button variant="outline" size="sm" onClick={handleLogout} className="w-full bg-transparent">
-            <LogOut className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" onClick={handleLogout} className="w-full bg-transparent h-7 text-xs">
+            <LogOut className="h-3 w-3 mr-1" />
             ログアウト
           </Button>
         </div>

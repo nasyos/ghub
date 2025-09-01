@@ -191,11 +191,6 @@ export function AuditLogs() {
 
       return (
       <div className="flex-1 space-y-4 p-6 bg-gray-50 h-full overflow-y-auto">
-        <div className="flex items-center space-x-1 text-xs text-gray-500 mb-2">
-          <span>ホーム</span>
-          <span>&gt;</span>
-          <span>監査ログ</span>
-        </div>
         <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">監査ログ</h1>
         <Button onClick={exportLogs} variant="outline">

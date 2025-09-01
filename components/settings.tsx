@@ -1249,26 +1249,20 @@ export function Settings() {
 
       return (
       <div className="flex-1 space-y-4 p-6 bg-gray-50 h-full overflow-y-auto">
-        <div className="flex items-center space-x-1 text-xs text-gray-500 mb-2">
-          <span>ホーム</span>
-          <span>&gt;</span>
-          <span>設定</span>
-        </div>
         <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">設定</h1>
         <p className="text-muted-foreground">システムの設定を管理します</p>
       </div>
 
       <Tabs defaultValue="templates" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="templates">テンプレート管理</TabsTrigger>
-          <TabsTrigger value="accounts">アカウント管理</TabsTrigger>
-          <TabsTrigger value="facebook-pages">Facebookページ連携</TabsTrigger>
-          <TabsTrigger value="audit-logs">監査ログ</TabsTrigger>
-          <TabsTrigger value="apply-links">法人ページ接続リンク管理</TabsTrigger>
-          <TabsTrigger value="notifications">通知</TabsTrigger>
+        <TabsList className="w-full flex gap-2 overflow-x-auto whitespace-nowrap">
+          <TabsTrigger className="whitespace-nowrap" value="templates">テンプレート管理</TabsTrigger>
+          <TabsTrigger className="whitespace-nowrap" value="accounts">アカウント管理</TabsTrigger>
+          <TabsTrigger className="whitespace-nowrap" value="facebook-pages">Facebookページ連携</TabsTrigger>
+          {/* <TabsTrigger value="audit-logs">監査ログ</TabsTrigger> */}
+          <TabsTrigger className="whitespace-nowrap" value="apply-links">法人ページ接続リンク管理</TabsTrigger>
           {(roleNormalized === "ca" || roleNormalized === "ca_manager" || roleNormalized === "dual") && (
-            <TabsTrigger value="profile">個人設定</TabsTrigger>
+            <TabsTrigger className="whitespace-nowrap" value="profile">個人設定</TabsTrigger>
           )}
         </TabsList>
 
@@ -1377,6 +1371,47 @@ export function Settings() {
             <h2 className="text-2xl font-bold">個人設定</h2>
             <p className="text-muted-foreground">個人の設定を管理します</p>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>プロフィール</CardTitle>
+              <CardDescription>あなたの基本情報</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm text-muted-foreground">氏名</Label>
+                  <div className="mt-1">{currentUser?.name || "-"}</div>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">メールアドレス</Label>
+                  <div className="mt-1">{currentUser?.email || "-"}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>通知設定</CardTitle>
+              <CardDescription>ポップアップ通知の設定</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="popup-enabled">ポップアップ通知を有効にする</Label>
+                  <Switch
+                    id="popup-enabled"
+                    checked={notifyPrefs.popupEnabled}
+                    onCheckedChange={(checked) => setNotifyPrefs({ ...notifyPrefs, popupEnabled: checked })}
+                  />
+                </div>
+              </div>
+              <Button className="mt-4" onClick={handleSaveNotifyPrefs}>
+                保存
+              </Button>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
@@ -2295,29 +2330,7 @@ export function Settings() {
           )}
         </TabsContent>
 
-        <TabsContent value="notifications" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>通知設定</CardTitle>
-              <CardDescription>ポップアップ通知の設定</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="popup-enabled">ポップアップ通知を有効にする</Label>
-                  <Switch
-                    id="popup-enabled"
-                    checked={notifyPrefs.popupEnabled}
-                    onCheckedChange={(checked) => setNotifyPrefs({ ...notifyPrefs, popupEnabled: checked })}
-                  />
-                </div>
-              </div>
-              <Button className="mt-4" onClick={handleSaveNotifyPrefs}>
-                保存
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {/* 通知タブは削除（個人設定に統合済み） */}
       </Tabs>
 
       <Dialog open={qrModalOpen} onOpenChange={setQrModalOpen}>

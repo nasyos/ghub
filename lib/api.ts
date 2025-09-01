@@ -1,4 +1,9 @@
 import { auditLogger, AUDIT_ACTIONS } from "@/lib/audit-logger"
+import { getMockApplications, getMockApplicationDetail } from "@/lib/mock/pipeline.fixtures"
+import { ApplicationRow, ApplicationDetail, PipelineFilters } from "@/lib/pipeline/types"
+import { getMockRecommendationTemplates, getMockRecommendationTemplate } from "@/lib/mock/recommendation-templates.fixtures"
+import { getMockCandidates as getMockCandidatesData, getMockCandidate } from "@/lib/mock/candidates.fixtures"
+import { sortCandidates, filterCandidates } from "@/lib/candidates/utils"
 
 // ---- User Management Types ----
 export interface User {
@@ -2668,6 +2673,148 @@ export const consentApi = {
   },
 }
 
+export const pipelineApi = {
+  async getApplications(filters: PipelineFilters = {}): Promise<{ items: ApplicationRow[]; total: number }> {
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    const applications = getMockApplications()
+    
+    // フィルタリング
+    let filtered = applications.filter(app => {
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase()
+        if (!app.candidateName.toLowerCase().includes(searchLower) &&
+            !app.jobTitle.toLowerCase().includes(searchLower) &&
+            !app.companyName.toLowerCase().includes(searchLower)) {
+          return false
+        }
+      }
+      
+      if (filters.status && filters.status.length > 0) {
+        if (!filters.status.includes(app.status)) {
+          return false
+        }
+      }
+      
+      if (filters.assignedCA && filters.assignedCA.length > 0) {
+        if (!filters.assignedCA.includes(app.assignedCA)) {
+          return false
+        }
+      }
+      
+      return true
+    })
+    
+    return {
+      items: filtered,
+      total: filtered.length
+    }
+  },
+
+  async getApplicationDetail(id: string): Promise<ApplicationDetail | null> {
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    return getMockApplicationDetail(id)
+  },
+
+  async getApplicationResult(id: string): Promise<any> {
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    return {
+      result: "pass",
+      notes: "面接結果のメモ",
+      nextStage: "最終面接",
+      scheduledDate: "2024-02-15T10:00:00Z"
+    }
+  },
+
+  async saveApplicationResult(id: string, data: any): Promise<boolean> {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return true
+  },
+
+  async getCANotes(id: string): Promise<any> {
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    return {
+      summary: "候補者の要約",
+      memo: "CAメモの内容",
+      isPinned: false,
+      raAddon: "RA追加情報"
+    }
+  },
+
+  async saveCANotes(id: string, data: any): Promise<boolean> {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return true
+  },
+
+  async getApplicationInterviews(id: string): Promise<any> {
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    return {
+      interviews: [
+        {
+          id: "1",
+          type: "面接",
+          scheduledAt: "2024-02-10T14:00:00Z",
+          location: "東京都渋谷区",
+          status: "scheduled",
+          result: null,
+          comments: []
+        }
+      ]
+    }
+  },
+
+  async addInterview(id: string, data: any): Promise<any> {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return { success: true }
+  },
+
+  async updateInterview(id: string, interviewId: string, data: any): Promise<any> {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return { success: true }
+  },
+
+  async cancelInterview(id: string, interviewId: string): Promise<any> {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return { success: true }
+  },
+
+  async saveInterviewResult(id: string, interviewId: string, data: any): Promise<any> {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return { success: true }
+  },
+
+  async getInterviewComments(id: string, interviewId: string): Promise<any> {
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    return {
+      comments: [
+        {
+          id: "1",
+          text: "面接コメント",
+          createdAt: "2024-02-10T15:00:00Z",
+          author: "田中CA"
+        }
+      ]
+    }
+  },
+
+  async addInterviewComment(id: string, interviewId: string, text: string): Promise<any> {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return { success: true }
+  },
+
+  async saveRecommendationDraft(id: string, data: any): Promise<any> {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return { success: true }
+  },
+
+  async getRecommendationDraft(id: string): Promise<any> {
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    return {
+      instructions: "推薦状の指示",
+      draft: "推薦状の下書き"
+    }
+  }
+}
+
 export const candidatesApi = {
   async getByThreadId(threadId: string): Promise<Candidate | null> {
     await new Promise((resolve) => setTimeout(resolve, 200))
@@ -2692,6 +2839,38 @@ export const candidatesApi = {
     mockCandidates.push(newCandidate)
     return newCandidate
   },
+
+  async getCandidates(filters: any = {}): Promise<{ items: any[]; total: number }> {
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    
+    let candidates = getMockCandidatesData()
+    
+    // フィルタリング
+    candidates = filterCandidates(candidates, filters)
+    
+    // ソート
+    if (filters.sortBy) {
+      candidates = sortCandidates(candidates, filters.sortBy)
+    } else {
+      candidates = sortCandidates(candidates, "priority")
+    }
+    
+    return {
+      items: candidates,
+      total: candidates.length
+    }
+  },
+
+  async getCandidate(id: string): Promise<any | null> {
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    return getMockCandidate(id)
+  },
+
+  async updateCandidate(id: string, data: any): Promise<boolean> {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    // TODO: Implement update logic
+    return true
+  }
 }
 
 // Initialize data from localStorage

@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import type React from "react"
 import { Languages } from "lucide-react"
 
@@ -15,7 +15,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { MockFacebookPage, MockThread, MockMessage } from "@/lib/mock/messages.fixtures"
 import { getSendState, type DisplayTagName } from "@/lib/api"
 import { useRouter, useSearchParams } from "next/navigation"
-import PageHeader from "@/components/layout/PageHeader"
 
 interface MessageTemplate {
   id: string
@@ -96,6 +95,7 @@ export function Messages() {
   const [selectedTagForSend, setSelectedTagForSend] = useState<DisplayTagName | null>(null)
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [candidateInfoMap, setCandidateInfoMap] = useState<Record<string, any>>({})
+  const [isTranslationEnabled, setIsTranslationEnabled] = useState(false)
   const [consentStatus, setConsentStatus] = useState<{
     status: "not_requested" | "pending" | "acquired"
     requestedAt?: string
@@ -105,6 +105,11 @@ export function Messages() {
   const [showConsentHistory, setShowConsentHistory] = useState(false)
   const [consentHistory, setConsentHistory] = useState<any[]>([])
   const [showConsentModal, setShowConsentModal] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const composerRef = useRef<HTMLDivElement>(null)
+  const [composerHeight, setComposerHeight] = useState(72) // デフォルトの入力欄の高さ
+  const [isMobileLayout, setIsMobileLayout] = useState(false)
 
   const templates: MessageTemplate[] = [
     {
@@ -303,10 +308,20 @@ export function Messages() {
       setNewMessage("")
       setSelectedTagForSend(null)
       setAttachedFiles([])
+      
+      // Reset textarea height
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto'
+      }
 
       // Reload messages
       const messagesData = await messagesClient.getMessages(selectedThread.id)
       setMessages(messagesData || [])
+
+      // 送信後に最下部にスクロール
+      setTimeout(() => {
+        scrollToBottom()
+      }, 100)
 
       toast({
         title: "メッセージ送信完了",
@@ -479,23 +494,115 @@ export function Messages() {
     }
   }
 
-  return (
-    <div className="flex-1 bg-gray-50 h-full overflow-y-auto">
-      <PageHeader
-        title="メッセージ管理"
-        breadcrumbs={[{ label: "ホーム", href: "/" }, { label: "メッセージ管理" }]}
-        tabs={[
-          { value: "all", label: "横断" },
-          { value: "page", label: "ページ別" },
-        ]}
-        activeTab={tabMode}
-        onTabChange={(v) => setTabMode(v as "all" | "page")}
-      />
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+    }
+  }
 
-      <div className="container max-w-7xl px-6 py-6">
-        <div className="flex bg-background border rounded-md overflow-hidden">
-        {/* Left Pane - Thread List */}
-        <div className="w-1/3 border-r flex flex-col">
+  const isNearBottom = () => {
+    const messagesArea = document.getElementById('messages-area')
+    if (!messagesArea) return false
+    
+    const { scrollTop, scrollHeight, clientHeight } = messagesArea
+    return scrollHeight - scrollTop - clientHeight <= 100
+  }
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      // 画面表示時または送信時は常に最下部へスクロール
+      scrollToBottom()
+    }
+  }, [messages])
+
+  // 受信時の自動スクロール（最下部付近のみ）
+  useEffect(() => {
+    if (messages.length > 0 && isNearBottom()) {
+      scrollToBottom()
+    } else if (messages.length > 0 && !isNearBottom()) {
+      // 最下部から離れている場合は新着通知のみ
+      toast({
+        title: "新着メッセージ",
+        description: "新しいメッセージが届きました",
+      })
+    }
+  }, [messages])
+
+  const adjustTextareaHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      const scrollHeight = textareaRef.current.scrollHeight
+      const maxHeight = 120 // 5行分の最大高さ
+      const newHeight = Math.min(scrollHeight, maxHeight)
+      textareaRef.current.style.height = newHeight + 'px'
+      textareaRef.current.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden'
+    }
+  }
+
+  useEffect(() => {
+    adjustTextareaHeight()
+  }, [newMessage])
+
+  // ResizeObserver for composer height
+  useEffect(() => {
+    if (!composerRef.current) return
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const height = entry.contentRect.height
+        setComposerHeight(height)
+        // CSS変数に反映
+        document.documentElement.style.setProperty('--composer-h', `${height}px`)
+      }
+    })
+
+    resizeObserver.observe(composerRef.current)
+
+    // 初期高さを設定
+    const initialHeight = composerRef.current.offsetHeight
+    setComposerHeight(initialHeight)
+    document.documentElement.style.setProperty('--composer-h', `${initialHeight}px`)
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [selectedThread])
+
+  // 初期化時にCSS変数を設定
+  useEffect(() => {
+    document.documentElement.style.setProperty('--composer-h', '72px')
+  }, [])
+
+  // レスポンシブ対応
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileLayout(window.innerWidth < 1024)
+    }
+    
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  return (
+    <div className="h-screen overflow-hidden bg-gray-50">
+      {/* ヘッダー - サイズを少し大きく */}
+      <div className="flex items-center justify-between px-6 py-3 h-12 border-b bg-white">
+        <div className="flex items-center gap-4">
+          <h1 className="text-lg font-semibold text-gray-900">メッセージ管理</h1>
+        </div>
+      </div>
+
+      {/* メッセージ管理コンテンツ - 2分割レイアウト */}
+      <div className={`h-[calc(100vh-48px)] bg-background overflow-hidden ${
+        isMobileLayout 
+          ? 'grid grid-cols-[1fr]' 
+          : 'grid grid-cols-[320px_1fr]'
+      }`}>
+        {/* Center Pane - Thread List */}
+        <div className={`h-full overflow-y-auto border-r flex flex-col ${
+          isMobileLayout ? 'w-full' : 'w-80'
+        }`}>
 
         {/* Tab Navigation */}
         <div className="border-b">
@@ -540,8 +647,8 @@ export function Messages() {
           </div>
         )}
 
-        {/* Search and Filters */}
-        <div className="p-4 border-b space-y-3">
+        {/* Search and Filters - Sticky Top */}
+        <div className="p-4 border-b space-y-3 bg-white sticky top-0 z-10">
           <Input
             type="text"
             placeholder="候補者名で検索..."
@@ -746,7 +853,7 @@ export function Messages() {
         </div>
 
         {/* Thread List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0 flex-shrink-0">
           {loading ? (
             <div className="p-4 text-center text-muted-foreground">読み込み中...</div>
           ) : threads.length === 0 ? (
@@ -762,14 +869,19 @@ export function Messages() {
               return (
                 <div
                   key={thread.id}
-                  onClick={() => setSelectedThread(thread)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setSelectedThread(thread)
+                  }}
                   className={`p-4 border-b cursor-pointer hover:bg-accent ${
                     selectedThread?.id === thread.id ? "bg-accent" : ""
                   }`}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">{thread.title || "名前未設定"}</span>
+                      <span className="font-medium">
+                        {thread.title || candidateInfoMap[thread.id]?.name || "名前未設定"}
+                      </span>
                       <Badge className={`text-xs text-white ${sendStateInfo.color}`}>{sendStateInfo.label}</Badge>
                     </div>
                     <div className="text-right">
@@ -788,214 +900,253 @@ export function Messages() {
       </div>
 
       {/* Right Pane - Messages */}
-      <div className="flex-1 flex flex-col">
+      <div id="conversation-panel" className="h-full flex flex-col" style={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
         {selectedThread ? (
           <>
-            {/* Thread Header */}
-            <div className="border-b p-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h2 className="text-lg font-semibold">{selectedThread.title}</h2>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    国籍: {candidateInfoMap[selectedThread.id]?.nationality || "不明"} • 性別:{" "}
-                    {candidateInfoMap[selectedThread.id]?.gender || "不明"} • 年齢:{" "}
-                    {candidateInfoMap[selectedThread.id]?.age || "不明"} • 希望職種:{" "}
-                    {candidateInfoMap[selectedThread.id]?.desiredPosition || "不明"}
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span>送信ステータス:</span>
-                    <Badge className={`text-white ${getSendStateDisplay(selectedThread).color}`}>
-                      {getSendStateDisplay(selectedThread).label}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span>担当CA:</span>
-                    <span>{selectedThread.ownerCA || "未設定"}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>同意:</span>
-                    <Badge className={`text-white ${getConsentStatusDisplay().color}`}>
-                      {getConsentStatusDisplay().label}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          // Translation functionality placeholder
-                          toast({
-                            title: "Translation",
-                            description: "Translation feature activated",
-                          })
-                        }}
-                      >
-                        <Languages className="h-4 w-4 mr-1" />
-                        翻訳
-                      </Button>
+            {/* Header Area - Fixed */}
+            <div id="conversation-header" className="border-b bg-white sticky top-0 z-10" style={{
+              flexShrink: 0,
+              minHeight: 'fit-content'
+            }}>
+              <div className="p-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h2 className="text-lg font-semibold">
+                      {selectedThread.title || candidateInfoMap[selectedThread.id]?.name || "名前未設定"}
+                    </h2>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      国籍: {candidateInfoMap[selectedThread.id]?.nationality || "不明"} • 性別:{" "}
+                      {candidateInfoMap[selectedThread.id]?.gender || "不明"} • 年齢:{" "}
+                      {candidateInfoMap[selectedThread.id]?.age || "不明"} • 希望職種:{" "}
+                      {candidateInfoMap[selectedThread.id]?.desiredPosition || "飲食"}
+                      <span className="ml-4 text-xs">
+                        送信ステータス: <Badge className={`text-white text-xs ${getSendStateDisplay(selectedThread).color}`}>
+                          {getSendStateDisplay(selectedThread).label}
+                        </Badge>
+                        担当CA: {selectedThread.ownerCA || "未設定"}
+                        同意: <Badge className={`text-white text-xs ${getConsentStatusDisplay().color}`}>
+                          {getConsentStatusDisplay().label}
+                        </Badge>
+                      </span>
                     </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant={isTranslationEnabled ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => {
+                        setIsTranslationEnabled(!isTranslationEnabled)
+                        toast({
+                          title: isTranslationEnabled ? "翻訳を無効化" : "翻訳を有効化",
+                          description: isTranslationEnabled 
+                            ? "メッセージを元の言語で表示します" 
+                            : "メッセージを日本語に翻訳して表示します",
+                        })
+                      }}
+                    >
+                      <Languages className="h-4 w-4 mr-1" />
+                      {isTranslationEnabled ? "翻訳ON" : "翻訳"}
+                    </Button>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4">
+            {/* Messages Area - Independent Scroll */}
+            <div id="messages-area" className="flex-1 overflow-y-auto" style={{ 
+              padding: '12px 16px',
+              paddingBottom: 'var(--composer-h, 72px)'
+            }}>
               {loadingMessages ? (
                 <div className="text-center text-muted-foreground">読み込み中...</div>
               ) : messages.length === 0 ? (
                 <div className="text-center text-muted-foreground">メッセージがありません</div>
               ) : (
-                messages.map((message) => (
-                  <div key={message.id} className={`mb-4 ${message.direction === "in" ? "text-left" : "text-right"}`}>
-                    <div
-                      className={`inline-block max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        message.direction === "in" ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"
-                      }`}
-                    >
-                      <div>{message.bodyOriginal}</div>
-                      {message.appliedTag && <div className="text-xs mt-1 opacity-75">タグ: {message.appliedTag}</div>}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">{formatDate(message.createdAt)}</div>
-                  </div>
-                ))
-              )}
-            </div>
+                <>
+                  {/* Send Status Guide */}
+                  {(() => {
+                    const sendStateInfo = getSendStateDisplay(selectedThread)
+                    if (sendStateInfo.state === "blocked") {
+                      return (
+                        <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-4">
+                          <div className="text-red-700 text-sm">送信不可・再接続が必要です</div>
+                        </div>
+                      )
+                    }
+                    if (sendStateInfo.state === "requires_tag") {
+                      return (
+                        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-3 mb-4">
+                          <div className="text-yellow-700 text-sm">ウィンドウ判定：タグが必要です</div>
+                        </div>
+                      )
+                    }
+                    return null
+                  })()}
 
-            {/* Send Status Guide */}
-            {(() => {
-              const sendStateInfo = getSendStateDisplay(selectedThread)
-              if (sendStateInfo.state === "blocked") {
-                return (
-                  <div className="bg-red-50 border-l-4 border-red-500 p-3 mx-4 mb-2">
-                    <div className="text-red-700 text-sm">送信不可・再接続が必要です</div>
-                  </div>
-                )
-              }
-              if (sendStateInfo.state === "requires_tag") {
-                return (
-                  <div className="bg-yellow-50 border-l-4 border-yellow-500 p-3 mx-4 mb-2">
-                    <div className="text-yellow-700 text-sm">ウィンドウ判定：タグが必要です</div>
-                  </div>
-                )
-              }
-              return null
-            })()}
-
-            {/* Send Area */}
-            <div className="border-t p-4">
-              <div className="flex gap-2 mb-2">
-                <Popover open={showTemplates} onOpenChange={setShowTemplates}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-sm bg-transparent">
-                      テンプレ
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 p-4" align="start">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-medium">テンプレート選択</h3>
-                      </div>
-
-                      <Input
-                        placeholder="テンプレートを検索..."
-                        value={templateSearch}
-                        onChange={(e) => setTemplateSearch(e.target.value)}
-                        className="text-sm"
-                      />
-
-                      <Select value={selectedTemplateCategory} onValueChange={setSelectedTemplateCategory}>
-                        <SelectTrigger className="text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">すべて</SelectItem>
-                          <SelectItem value="一般">一般</SelectItem>
-                          <SelectItem value="タグ用">タグ用</SelectItem>
-                          <SelectItem value="同意用">同意用</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <div className="max-h-48 overflow-y-auto space-y-2">
-                        {filteredTemplates.map((template) => (
-                          <div
-                            key={template.id}
-                            className="border rounded p-2 hover:bg-accent cursor-pointer"
-                            onClick={() => handleTemplateSelect(template)}
-                          >
-                            <div className="font-medium text-sm">{template.name}</div>
-                            <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{template.content}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowTagModal(true)}
-                  className={`text-sm ${
-                    getSendStateDisplay(selectedThread).state === "requires_tag" ? "bg-yellow-100" : ""
-                  }`}
-                >
-                  タグ送信
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setShowConsentModal(true)} className="text-sm">
-                  同意リクエスト
-                </Button>
-
-                <div className="relative">
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*,.pdf,.doc,.docx"
-                    onChange={handleFileSelect}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    id="file-input"
-                  />
-                  <Button variant="outline" size="sm" className="text-sm bg-transparent" asChild>
-                    <label htmlFor="file-input" className="cursor-pointer">
-                      添付
-                    </label>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Attached files display */}
-              {attachedFiles.length > 0 && (
-                <div className="mb-2 flex flex-wrap gap-2">
-                  {attachedFiles.map((file, index) => (
-                    <div key={index} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-xs">
-                      <span>{file.name}</span>
-                      <button
-                        onClick={() => removeAttachedFile(index)}
-                        className="text-muted-foreground hover:text-destructive"
+                  {messages.map((message) => (
+                    <div key={message.id} className={`mb-4 ${message.direction === "in" ? "text-left" : "text-right"}`}>
+                      <div
+                        className={`inline-block max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                          message.direction === "in" ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"
+                        }`}
                       >
-                        ×
-                      </button>
+                        <div>
+                          {isTranslationEnabled ? (
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-1">翻訳:</div>
+                              <div>{message.bodyTranslated || "翻訳中..."}</div>
+                              <div className="text-xs text-muted-foreground mt-2 border-t pt-1">
+                                原文: {message.bodyOriginal}
+                              </div>
+                            </div>
+                          ) : (
+                            <div>{message.bodyOriginal}</div>
+                          )}
+                        </div>
+                        {message.appliedTag && <div className="text-xs mt-1 opacity-75">タグ: {message.appliedTag}</div>}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">{formatDate(message.createdAt)}</div>
                     </div>
                   ))}
-                </div>
+                  <div ref={messagesEndRef} />
+                </>
               )}
-
-              <div className="flex gap-2">
-                <textarea
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Enter your message..."
-                  className="flex-1 px-3 py-2 border rounded-md resize-none"
-                  rows={3}
-                />
-                <Button onClick={handleSendMessage} disabled={!newMessage.trim()}>
-                  Send
-                </Button>
-              </div>
             </div>
+
+            {/* Composer Area - Fixed at bottom */}
+            {selectedThread && (
+              <div ref={composerRef} id="composer" className="w-full bg-white border-t" style={{
+                position: 'sticky',
+                bottom: 0,
+                width: '100%',
+                left: 0,
+                background: '#fff',
+                zIndex: 10,
+                flexShrink: 0
+              }}>
+                <div className="p-3">
+                  <div className="flex gap-2 mb-2">
+                  <Popover open={showTemplates} onOpenChange={setShowTemplates}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-sm bg-transparent">
+                        テンプレ
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 p-4" align="start">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <h3 className="font-medium">テンプレート選択</h3>
+                        </div>
+
+                        <Input
+                          placeholder="テンプレートを検索..."
+                          value={templateSearch}
+                          onChange={(e) => setTemplateSearch(e.target.value)}
+                          className="text-sm"
+                        />
+
+                        <Select value={selectedTemplateCategory} onValueChange={setSelectedTemplateCategory}>
+                          <SelectTrigger className="text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">すべて</SelectItem>
+                            <SelectItem value="一般">一般</SelectItem>
+                            <SelectItem value="タグ用">タグ用</SelectItem>
+                            <SelectItem value="同意用">同意用</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <div className="max-h-48 overflow-y-auto space-y-2">
+                          {filteredTemplates.map((template) => (
+                            <div
+                              key={template.id}
+                              className="border rounded p-2 hover:bg-accent cursor-pointer"
+                              onClick={() => handleTemplateSelect(template)}
+                            >
+                              <div className="font-medium text-sm">{template.name}</div>
+                              <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{template.content}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowTagModal(true)}
+                    className={`text-sm ${
+                      getSendStateDisplay(selectedThread).state === "requires_tag" ? "bg-yellow-100" : ""
+                    }`}
+                  >
+                    タグ送信
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setShowConsentModal(true)} className="text-sm">
+                    同意リクエスト
+                  </Button>
+
+                  <div className="relative">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx"
+                      onChange={handleFileSelect}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      id="file-input"
+                    />
+                    <Button variant="outline" size="sm" className="text-sm bg-transparent" asChild>
+                      <label htmlFor="file-input" className="cursor-pointer">
+                        添付
+                      </label>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Attached files display */}
+                {attachedFiles.length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    {attachedFiles.map((file, index) => (
+                      <div key={index} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-xs">
+                        <span>{file.name}</span>
+                        <button
+                          onClick={() => removeAttachedFile(index)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <textarea
+                    ref={textareaRef}
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Enter your message..."
+                    className="flex-1 px-3 py-2 border rounded-md resize-none min-h-[44px] max-h-[120px]"
+                    rows={1}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        handleSendMessage()
+                      }
+                    }}
+                  />
+                  <Button onClick={handleSendMessage} disabled={!newMessage.trim()}>
+                    Send
+                  </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
@@ -1052,7 +1203,6 @@ export function Messages() {
           </div>
         </DialogContent>
       </Dialog>
-        </div>
       </div>
     </div>
   )

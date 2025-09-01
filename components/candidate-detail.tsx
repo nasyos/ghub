@@ -47,6 +47,7 @@ import { loadLinks, upsertLink, removeLink, type CandidateJobLink } from "@/lib/
 import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/components/ui/use-toast"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Candidate } from "@/lib/candidates/types"
 
 async function parseResidenceCard(file: File) {
   // ダミー：固定の例を返す（将来API差替前提）
@@ -81,8 +82,9 @@ interface WorkExperience {
 }
 
 interface CandidateDetailProps {
-  candidateId: string | null
+  candidate: Candidate | null
   onBack: () => void
+  hideHeader?: boolean
 }
 
 const MOCK_CANDIDATES = [
@@ -310,12 +312,12 @@ const getFileIcon = (type: string) => {
   }
 }
 
-export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
+export function CandidateDetail({ candidate, onBack, hideHeader = false }: CandidateDetailProps) {
   const { roleNormalized } = useAuth()
   const isReadOnly = roleNormalized === "ra" || roleNormalized === "ra_manager"
   const { toast } = useToast()
 
-  const candidate = mockCandidates.find((c) => c.id.toString() === candidateId?.toString())
+  const candidateId = candidate?.id?.toString()
 
   const [currentStatus, setCurrentStatus] = useState("")
   const [memo, setMemo] = useState("")
@@ -330,7 +332,7 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
   const [isEditingBasicInfo, setIsEditingBasicInfo] = useState(false)
   const [basicInfo, setBasicInfo] = useState({
     name: candidate?.name || "",
-    nationality: candidate?.nationality || "",
+    nationality: candidate?.country || "",
     gender: candidate?.gender || "",
     age: candidate?.age || 0,
     desiredJob: candidate?.desiredJob || "",
@@ -343,6 +345,9 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
     facebookLink: candidate?.facebookProfile || "",
     birthdate: "",
     residenceCardNo: "",
+    addressDetail: "",
+    email: "",
+    phone: "",
   })
 
   const caList = [
@@ -370,9 +375,11 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
   const [newStepName, setNewStepName] = useState("")
   const [addingStepJobId, setAddingStepJobId] = useState<number | null>(null)
 
-  const [links, setLinks] = useState<CandidateJobLink[]>(() => loadLinks(candidateId))
+  const [links, setLinks] = useState<CandidateJobLink[]>(() => loadLinks(candidateId || ""))
   useEffect(() => {
-    setLinks(loadLinks(candidateId))
+    if (candidateId) {
+      setLinks(loadLinks(candidateId))
+    }
   }, [candidateId])
 
   // 追記: ジョブ一覧取得（モック/フォールバック）
@@ -425,8 +432,10 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
       note: "",
       updatedAt: now,
     }
-    upsertLink(candidateId, link)
-    setLinks(loadLinks(candidateId))
+    if (candidateId) {
+      upsertLink(candidateId, link)
+      setLinks(loadLinks(candidateId))
+    }
     setIsAddOpen(false)
     toast({ title: "紐付けしました" })
   }
@@ -435,24 +444,28 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
     const cur = links.find((l) => l.jobId === jobId)
     if (!cur) return
     const next = { ...cur, ...patch, updatedAt: new Date().toISOString() }
-    upsertLink(candidateId, next)
-    setLinks(loadLinks(candidateId))
+    if (candidateId) {
+      upsertLink(candidateId, next)
+      setLinks(loadLinks(candidateId))
+    }
   }
 
   function handleRemove(jobId: string) {
-    removeLink(candidateId, jobId)
-    setLinks(loadLinks(candidateId))
+    if (candidateId) {
+      removeLink(candidateId, jobId)
+      setLinks(loadLinks(candidateId))
+    }
     toast({ title: "削除しました" })
   }
 
   React.useEffect(() => {
     if (candidate) {
       setCurrentStatus(candidate.status)
-      setEducation(candidate.education || mockEducation)
-      setWorkExperience(candidate.work_experience || mockWorkExperience)
+      setEducation(mockEducation)
+      setWorkExperience(mockWorkExperience)
       setBasicInfo({
         name: candidate.name,
-        nationality: candidate.nationality,
+        nationality: candidate.country,
         gender: candidate.gender,
         age: candidate.age,
         desiredJob: candidate.desiredJob,
@@ -465,6 +478,9 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
         facebookLink: candidate.facebookProfile,
         birthdate: "",
         residenceCardNo: "",
+        addressDetail: "",
+        email: "",
+        phone: "",
       })
     }
   }, [candidate])
@@ -981,20 +997,21 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
   }
 
       return (
-      <div className="flex-1 space-y-4 p-6 bg-gray-50 h-full overflow-y-auto">
-        <div className="flex items-center space-x-1 text-xs text-gray-500 mb-2">
-          <span>ホーム</span>
-          <span>&gt;</span>
-          <span>候補者詳細</span>
-        </div>
-        {/* ヘッダー */}
-        <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          戻る
-        </Button>
-        <h1 className="text-2xl font-bold text-gray-900">候補者詳細</h1>
-      </div>
+      <div className="flex-1 space-y-4 p-6 h-full overflow-y-auto">
+        {!hideHeader && (
+          <>
+            {/* ヘッダー */}
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" onClick={onBack}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                戻る
+              </Button>
+              <h1 className="text-2xl font-bold text-gray-900">候補者詳細</h1>
+            </div>
+            
+
+          </>
+        )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 左側 */}
@@ -1274,7 +1291,7 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
                           <Label className="text-sm font-medium text-gray-600">担当CA</Label>
                           <Select
                             value={basicInfo.assignedCA}
-                            onChange={(e) => setBasicInfo({ ...basicInfo, assignedCA: e.target.value })}
+                            onValueChange={(value) => setBasicInfo({ ...basicInfo, assignedCA: value })}
                           >
                             <SelectTrigger className="mt-1">
                               <SelectValue />
@@ -1287,6 +1304,52 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
                               ))}
                             </SelectContent>
                           </Select>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-600">候補者番号</Label>
+                          <Input
+                            value={candidate?.candidateNumber || ""}
+                            disabled
+                            className="mt-1 bg-gray-50"
+                            placeholder="自動採番"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-600">生年月日</Label>
+                          <Input
+                            type="date"
+                            value={basicInfo.birthdate}
+                            onChange={(e) => setBasicInfo({ ...basicInfo, birthdate: e.target.value })}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-600">住所詳細</Label>
+                          <Input
+                            value={basicInfo.addressDetail || ""}
+                            onChange={(e) => setBasicInfo({ ...basicInfo, addressDetail: e.target.value })}
+                            className="mt-1"
+                            placeholder="市区町村・番地など"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-600">メールアドレス</Label>
+                          <Input
+                            type="email"
+                            value={basicInfo.email || ""}
+                            onChange={(e) => setBasicInfo({ ...basicInfo, email: e.target.value })}
+                            className="mt-1"
+                            placeholder="example@email.com"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-600">電話番号</Label>
+                          <Input
+                            value={basicInfo.phone || ""}
+                            onChange={(e) => setBasicInfo({ ...basicInfo, phone: e.target.value })}
+                            className="mt-1"
+                            placeholder="090-1234-5678"
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label className="text-sm font-medium text-gray-600">Facebookリンク</Label>
@@ -1552,6 +1615,77 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
             </CardContent>
           </Card>
 
+          {/* CA面談記録（選考管理を改名） */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5" />
+                CA面談記録
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* ステータス選択 */}
+              <div>
+                <Label className="text-sm font-medium">選考ステップ</Label>
+                <Select value={currentStatus} onValueChange={handleStatusChange}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 面談記録 */}
+              <div>
+                <Label className="text-sm font-medium">面談記録</Label>
+                <div className="mt-2 space-y-3">
+                  {mockInterviewRecords.map((record) => (
+                    <div key={record.id} className="p-3 border rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge variant="outline">{record.type}</Badge>
+                        <span className="text-sm text-gray-500">{record.date}</span>
+                      </div>
+                      <p className="text-sm mb-2">
+                        <strong>面談者:</strong> {record.interviewer}
+                      </p>
+                      <p className="text-sm mb-2">{record.summary}</p>
+                      <p className="text-sm text-blue-600">
+                        <strong>次のアクション:</strong> {record.nextAction}
+                      </p>
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" className="w-full bg-transparent">
+                    <Plus className="h-4 w-4 mr-2" />
+                    面談記録を追加
+                  </Button>
+                </div>
+              </div>
+
+              {/* メモ */}
+              <div>
+                <Label className="text-sm font-medium">メモ</Label>
+                <Textarea
+                  placeholder="候補者に関するメモを入力..."
+                  value={memo}
+                  onChange={(e) => setMemo(e.target.value)}
+                  className="mt-1 min-h-[100px]"
+                />
+                <Button size="sm" className="mt-2" onClick={handleMemoSave}>
+                  保存
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 求人紐づけ/求人割当セクションは非表示 */}
+          {/* 以下のセクションを削除または非表示にする */}
+          {/* 
           <section className="mt-6" data-testid="cj-panel">
             <Card>
               <CardHeader>
@@ -1649,9 +1783,12 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
               </CardContent>
             </Card>
           </section>
+          */}
+
         </div>
 
-        {/* 右側 - 選考管理 */}
+        {/* 右側 - 選考管理（削除） */}
+        {/* 
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -1662,6 +1799,7 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
             </CardHeader>
             <CardContent className="space-y-6">
               {/* ステータス選択 */}
+              {/* 
               <div>
                 <Label className="text-sm font-medium">選考ステップ</Label>
                 <Select value={currentStatus} onValueChange={handleStatusChange}>
@@ -1677,8 +1815,10 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
                   </SelectContent>
                 </Select>
               </div>
+              */}
 
               {/* 面談記録 */}
+              {/* 
               <div>
                 <Label className="text-sm font-medium">面談記録</Label>
                 <div className="mt-2 space-y-3">
@@ -1703,8 +1843,10 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
                   </Button>
                 </div>
               </div>
+              */}
 
               {/* メモ */}
+              {/* 
               <div>
                 <Label className="text-sm font-medium">メモ</Label>
                 <Textarea
@@ -1717,8 +1859,10 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
                   保存
                 </Button>
               </div>
+              */}
 
               {/* 求人引当 */}
+              {/* 
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <Label className="text-sm font-medium">求人引当</Label>
@@ -1746,6 +1890,7 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
                         </div>
                         <div className="space-y-2 max-h-60 overflow-y-auto">
                           {/* 求人検索結果のモック */}
+                          {/* 
                           <div className="p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
                             <h4 className="font-medium">Webデザイナー</h4>
                             <p className="text-sm text-gray-600">クリエイティブ株式会社 • 東京都渋谷区</p>
@@ -1848,147 +1993,59 @@ export function CandidateDetail({ candidateId, onBack }: CandidateDetailProps) {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="未実施">未実施</SelectItem>
-                                  <SelectItem value="予定">予定</SelectItem>
-                                  <SelectItem value="審査中">審査中</SelectItem>
-                                  <SelectItem value="通過">通過</SelectItem>
+                                  <SelectItem value="実施中">実施中</SelectItem>
+                                  <SelectItem value="完了">完了</SelectItem>
                                   <SelectItem value="不合格">不合格</SelectItem>
                                 </SelectContent>
                               </Select>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setEditingJobId(job.id)
-                                  setEditingStepIndex(stepIndex)
-                                }}
-                              >
-                                <MessageSquare className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteSelectionStep(job.id, stepIndex)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
                             </div>
                           ))}
                         </div>
                       </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">求人コメント</Label>
-                        <Textarea
-                          placeholder="この求人に関するコメント..."
-                          value={jobComments[job.id] || job.comment}
-                          onChange={(e) => setJobComments({ ...jobComments, [job.id]: e.target.value })}
-                          onBlur={() => handleJobCommentSave(job.id, jobComments[job.id] || job.comment)}
-                          className="text-sm"
-                          rows={2}
-                        />
-                      </div>
-
-                      <Badge variant={job.status === "引当済み" ? "default" : "secondary"} className="mt-2">
-                        {job.status}
-                      </Badge>
                     </div>
                   ))}
                 </div>
-
-                <Dialog
-                  open={editingJobId !== null && editingStepIndex !== null}
-                  onOpenChange={() => {
-                    setEditingJobId(null)
-                    setEditingStepIndex(null)
-                  }}
-                >
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>選考ステップコメント</DialogTitle>
-                      <DialogDescription>
-                        {editingJobId &&
-                          editingStepIndex !== null &&
-                          mockJobs.find((j) => j.id === editingJobId)?.selectionSteps[editingStepIndex]?.step}{" "}
-                        のコメントを編集
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <Textarea
-                        placeholder="選考ステップに関するコメント..."
-                        defaultValue={
-                          editingJobId && editingStepIndex !== null
-                            ? mockJobs.find((j) => j.id === editingJobId)?.selectionSteps[editingStepIndex]?.comment
-                            : ""
-                        }
-                        rows={3}
-                        id="step-comment"
-                      />
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setEditingJobId(null)
-                          setEditingStepIndex(null)
-                        }}
-                      >
-                        キャンセル
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          const comment = (document.getElementById("step-comment") as HTMLTextAreaElement)?.value || ""
-                          if (editingJobId && editingStepIndex !== null) {
-                            handleStepCommentSave(editingJobId, editingStepIndex, comment)
-                          }
-                        }}
-                      >
-                        保存
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            </CardContent> */}
+          {/* </Card> */}
+        {/* </div> */}
 
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>求人を追加</DialogTitle>
-          </DialogHeader>
-          <div className="flex gap-2">
-            <Input
-              placeholder="求人ID・企業名・職種を検索"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              data-testid="cj-search"
-            />
-          </div>
-          <div className="mt-3 max-h-[40vh] overflow-auto rounded border">
-            {filtered.length === 0 ? (
-              <div className="p-3 text-sm text-muted-foreground">該当する求人がありません</div>
-            ) : (
-              filtered.map((j) => (
-                <div key={j.jobId} className="flex items-center justify-between border-b p-2">
-                  <div className="text-sm">
-                    <div className="font-medium">{j.title}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {j.companyName}／{j.jobId}
-                      {j.location ? `／${j.location}` : ""}
+        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>求人を追加</DialogTitle>
+            </DialogHeader>
+            <div className="flex gap-2">
+              <Input
+                placeholder="求人ID・企業名・職種を検索"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                data-testid="cj-search"
+              />
+            </div>
+            <div className="mt-3 max-h-[40vh] overflow-auto rounded border">
+              {filtered.length === 0 ? (
+                <div className="p-3 text-sm text-muted-foreground">該当する求人がありません</div>
+              ) : (
+                filtered.map((j) => (
+                  <div key={j.jobId} className="flex items-center justify-between border-b p-2">
+                    <div className="text-sm">
+                      <div className="font-medium">{j.title}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {j.companyName}／{j.jobId}
+                        {j.location ? `／${j.location}` : ""}
+                      </div>
                     </div>
+                    <Button size="sm" onClick={() => handleAdd(j)} disabled={isReadOnly} data-testid="cj-add-exec">
+                      追加
+                    </Button>
                   </div>
-                  <Button size="sm" onClick={() => handleAdd(j)} disabled={isReadOnly} data-testid="cj-add-exec">
-                    追加
-                  </Button>
-                </div>
-              ))
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   )
 }

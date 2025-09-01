@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import { auditLogger, AUDIT_ACTIONS } from "@/lib/audit-logger"
 
 // ---- Role / Page / Feature 定義（後方互換あり） ----
@@ -12,6 +12,7 @@ export type PageId =
   | "messages"
   | "candidates"
   | "candidate-detail" // 候補者詳細
+  | "pipeline" // 選考管理（横断版）
   | "jobs"
   | "jobSelection" // 求人別選考管理
   | "partners" // 取引先管理
@@ -35,7 +36,8 @@ const PAGE_ACL: Record<PageId, Role[]> = {
   dashboard: ["admin", "ca", "ca_manager", "ra", "ra_manager", "dual"],
   messages: ["admin", "ca", "ca_manager", "dual"],
   candidates: ["admin", "ca", "ca_manager", "dual"],
-  "candidate-detail": ["admin", "ca", "ca_manager", "dual"], // 候補者詳細は候補者管理と同じ権限
+  "candidate-detail": ["admin", "ca", "ca_manager", "dual"], // 求職者詳細は求職者管理と同じ権限
+  pipeline: ["admin", "ra", "ra_manager", "dual"], // 選考管理はRAと管理者がアクセス可能
   jobs: ["admin", "ra", "ra_manager", "dual"],
   jobSelection: ["admin", "ra", "ra_manager", "dual"],
   partners: ["admin", "ca", "ca_manager", "dual"], // 取引先管理は管理者とCAがアクセス可能
@@ -319,6 +321,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false
   }
 
+  const canSeePage = useCallback((page: PageId) => {
+    return !!user && canSeePageAcl(user.role, page)
+  }, [user])
+
+  const canUse = useCallback((feature: FeatureId) => {
+    return !!user && canUseAcl(user.role, feature)
+  }, [user])
+
   return (
     <AuthContext.Provider
       value={{
@@ -332,8 +342,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         canSee, // Legacy canSee for backward compatibility
 
         roleNormalized,
-        canSeePage: (page) => !!user && canSeePageAcl(user.role, page),
-        canUse: (feature) => !!user && canUseAcl(user.role, feature),
+        canSeePage,
+        canUse,
       }}
     >
       {children}

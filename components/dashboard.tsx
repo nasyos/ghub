@@ -826,15 +826,7 @@ export function Dashboard({
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>件数</Label>
-                  <div
-                    className="flex items-center h-10 px-3 py-2 border rounded-md bg-muted"
-                    data-testid="jobpipe-filter-count"
-                  >
-                    {jobsFiltered.length} / {jobPipelineData.length}
-                  </div>
-                </div>
+
               </div>
 
               {jobFilter.period === "custom" && (
@@ -874,9 +866,14 @@ export function Dashboard({
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Briefcase className="h-5 w-5 text-purple-600" />
-                <span>求人別進捗管理</span>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Briefcase className="h-5 w-5 text-purple-600" />
+                  <span>求人別進捗管理</span>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {jobsFiltered.length}件
+                </Badge>
               </CardTitle>
               <CardDescription>
                 求人毎の各ステータス人数（行クリック：求人詳細、人数クリック：選考管理）

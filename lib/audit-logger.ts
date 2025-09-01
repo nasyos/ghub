@@ -299,3 +299,244 @@ export const AUDIT_ACTIONS = {
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
+
+// lib/audit-logger.ts
+// 監査ログ機能を管理するライブラリ
+
+export interface AuditLog {
+  id: string
+  linkId: number
+  actorId?: number
+  action: 'link' | 'recommend' | 'unlink' | 'reject' | 'hold' | 'approve'
+  fromStatus?: string
+  toStatus?: string
+  createdAt: string
+  meta?: Record<string, any>
+}
+
+export interface LinkAuditData {
+  linkId: number
+  actorId?: number
+  action: AuditLog['action']
+  fromStatus?: string
+  toStatus?: string
+  meta?: Record<string, any>
+}
+
+// 監査ログを記録する関数
+export async function logLinkAudit(data: LinkAuditData): Promise<AuditLog> {
+  const auditLog: AuditLog = {
+    id: generateId(),
+    linkId: data.linkId,
+    actorId: data.actorId,
+    action: data.action,
+    fromStatus: data.fromStatus,
+    toStatus: data.toStatus,
+    createdAt: new Date().toISOString(),
+    meta: data.meta
+  }
+
+  // 実際のAPI呼び出しをシミュレート
+  await new Promise(resolve => setTimeout(resolve, 50))
+  
+  // 監査ログを保存（実際の実装ではデータベースに保存）
+  saveAuditLog(auditLog)
+  
+  return auditLog
+}
+
+// 推薦アクションの監査ログ
+export async function logRecommendation(
+  linkId: number,
+  actorId: number,
+  fromStatus: string,
+  comment?: string
+): Promise<AuditLog> {
+  return logLinkAudit({
+    linkId,
+    actorId,
+    action: 'recommend',
+    fromStatus,
+    toStatus: 'recommended',
+    meta: {
+      comment,
+      timestamp: new Date().toISOString()
+    }
+  })
+}
+
+// 解除アクションの監査ログ
+export async function logUnlink(
+  linkId: number,
+  actorId: number,
+  fromStatus: string,
+  reason?: string
+): Promise<AuditLog> {
+  return logLinkAudit({
+    linkId,
+    actorId,
+    action: 'unlink',
+    fromStatus,
+    toStatus: 'unlinked',
+    meta: {
+      reason,
+      timestamp: new Date().toISOString()
+    }
+  })
+}
+
+// 引当アクションの監査ログ
+export async function logLink(
+  linkId: number,
+  actorId: number,
+  candidateId: number,
+  jobId: number
+): Promise<AuditLog> {
+  return logLinkAudit({
+    linkId,
+    actorId,
+    action: 'link',
+    fromStatus: null,
+    toStatus: 'linked',
+    meta: {
+      candidateId,
+      jobId,
+      timestamp: new Date().toISOString()
+    }
+  })
+}
+
+// 差戻しアクションの監査ログ
+export async function logRejection(
+  linkId: number,
+  actorId: number,
+  fromStatus: string,
+  reason?: string
+): Promise<AuditLog> {
+  return logLinkAudit({
+    linkId,
+    actorId,
+    action: 'reject',
+    fromStatus,
+    toStatus: 'rejected',
+    meta: {
+      reason,
+      timestamp: new Date().toISOString()
+    }
+  })
+}
+
+// 保留アクションの監査ログ
+export async function logHold(
+  linkId: number,
+  actorId: number,
+  fromStatus: string,
+  reason?: string
+): Promise<AuditLog> {
+  return logLinkAudit({
+    linkId,
+    actorId,
+    action: 'hold',
+    fromStatus,
+    toStatus: 'on_hold',
+    meta: {
+      reason,
+      timestamp: new Date().toISOString()
+    }
+  })
+}
+
+// 承認アクションの監査ログ
+export async function logApproval(
+  linkId: number,
+  actorId: number,
+  fromStatus: string
+): Promise<AuditLog> {
+  return logLinkAudit({
+    linkId,
+    actorId,
+    action: 'approve',
+    fromStatus,
+    toStatus: 'approved',
+    meta: {
+      timestamp: new Date().toISOString()
+    }
+  })
+}
+
+// 監査ログを取得する関数
+export async function getAuditLogs(
+  linkId?: number,
+  limit: number = 50,
+  offset: number = 0
+): Promise<AuditLog[]> {
+  // 実際のAPI呼び出しをシミュレート
+  await new Promise(resolve => setTimeout(resolve, 100))
+  
+  // モックデータを返す
+  return getMockAuditLogs(linkId, limit, offset)
+}
+
+// ヘルパー関数
+function generateId(): string {
+  return Math.random().toString(36).substr(2, 9)
+}
+
+function saveAuditLog(auditLog: AuditLog): void {
+  // 実際の実装ではデータベースに保存
+  console.log('Audit log saved:', auditLog)
+}
+
+function getMockAuditLogs(linkId?: number, limit: number = 50, offset: number = 0): AuditLog[] {
+  const mockAuditLogs: AuditLog[] = [
+    {
+      id: '1',
+      linkId: 1,
+      actorId: 1,
+      action: 'link',
+      fromStatus: null,
+      toStatus: 'linked',
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1日前
+      meta: {
+        candidateId: 1,
+        jobId: 1,
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString()
+      }
+    },
+    {
+      id: '2',
+      linkId: 1,
+      actorId: 2,
+      action: 'recommend',
+      fromStatus: 'linked',
+      toStatus: 'recommended',
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), // 12時間前
+      meta: {
+        comment: '建設現場での経験があり、日本語もN3レベルで十分コミュニケーション可能です。',
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString()
+      }
+    },
+    {
+      id: '3',
+      linkId: 2,
+      actorId: 1,
+      action: 'link',
+      fromStatus: null,
+      toStatus: 'linked',
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(), // 6時間前
+      meta: {
+        candidateId: 2,
+        jobId: 2,
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString()
+      }
+    }
+  ]
+  
+  let filteredLogs = mockAuditLogs
+  
+  if (linkId) {
+    filteredLogs = mockAuditLogs.filter(log => log.linkId === linkId)
+  }
+  
+  return filteredLogs.slice(offset, offset + limit)
+}

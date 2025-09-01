@@ -162,3 +162,11 @@ export const mockPartners: Partner[] = [
     updatedAt: "2024-01-13T14:00:00Z"
   }
 ];
+
+export function getMockPartners(): Partner[] {
+  return mockPartners
+}
+
+export function getMockPartner(id: string): Partner | null {
+  return mockPartners.find(partner => partner.id === id) || null
+}

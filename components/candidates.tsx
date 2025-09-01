@@ -25,6 +25,11 @@ import { Plus, Upload, LinkIcon, AlertCircle, X, Filter, Download } from "lucide
 import { useAuth } from "@/contexts/auth-context"
 import { CandidateDetail } from "@/components/candidate-detail"
 import { useToast } from "@/components/ui/use-toast"
+import { useRouter } from "next/navigation"
+import LinkJobs from "@/components/link-jobs"
+import ProgressManagement from "@/components/progress"
+import { CandidatesTable } from "@/components/candidates-table"
+import { Candidate } from "@/lib/candidates/types"
 
 const candidatesData = [
   {
@@ -289,8 +294,10 @@ export default function Candidates({
 }: CandidatesProps) {
   const { user } = useAuth()
   const { toast } = useToast()
+  const router = useRouter()
 
   const [internalSelectedCandidateId, setInternalSelectedCandidateId] = useState<string | null>(null)
+  const [candidateDetailTab, setCandidateDetailTab] = useState<"detail" | "jobs" | "progress">("detail")
 
   const [filter, setFilter] = useState<FilterState>(() => {
     try {
@@ -1065,18 +1072,66 @@ export default function Candidates({
     }
   }
 
+  const handleCandidateClick = (candidateId: number) => {
+    // ページ内で候補者詳細に切り替え
+    setInternalSelectedCandidateId(candidateId.toString())
+  }
+
   const effectiveSelectedCandidateId = selectedCandidateId || internalSelectedCandidateId
   if (effectiveSelectedCandidateId) {
     const candidate = candidates.find((c) => c.id === Number(effectiveSelectedCandidateId))
     if (candidate) {
       return (
-        <CandidateDetail
-          candidateId={effectiveSelectedCandidateId.toString()}
-          onBack={() => {
-            setInternalSelectedCandidateId(null)
-            onBack?.()
-          }}
-        />
+        <div className="p-6 space-y-4">
+          {/* ページタイトル */}
+          <h1 className="text-2xl font-bold">{candidate.name}</h1>
+          
+          {/* タブ */}
+          <div className="flex gap-4 border-b mb-4">
+                             {[
+                   { key: "detail", label: "求職者詳細" },
+                   { key: "jobs", label: "求人引当" },
+                   { key: "progress", label: "選考進捗" },
+                 ].map((t) => {
+              const isActive = t.key === candidateDetailTab
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => setCandidateDetailTab(t.key as "detail" | "jobs" | "progress")}
+                  className={`pb-2 -mb-[1px] border-b-2 ${
+                    isActive ? "border-foreground font-medium" : "border-transparent text-muted-foreground"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              )
+            })}
+          </div>
+          
+          {/* コンテンツ */}
+          {candidateDetailTab === "detail" && (
+            <CandidateDetail
+              candidateId={effectiveSelectedCandidateId.toString()}
+              onBack={() => {
+                setInternalSelectedCandidateId(null)
+                onBack?.()
+              }}
+              hideHeader={true}
+            />
+          )}
+          {candidateDetailTab === "jobs" && (
+            <LinkJobs 
+              candidateId={effectiveSelectedCandidateId.toString()} 
+              candidateName={candidate.name}
+            />
+          )}
+          {candidateDetailTab === "progress" && (
+            <ProgressManagement 
+              candidateId={effectiveSelectedCandidateId.toString()} 
+              candidateName={candidate.name}
+            />
+          )}
+        </div>
       )
     }
   }
@@ -1094,11 +1149,6 @@ export default function Candidates({
 
   return (
           <div className="flex-1 space-y-4 p-6 bg-gray-50 h-full overflow-y-auto">
-        <div className="flex items-center space-x-1 text-xs text-gray-500 mb-2">
-          <span>ホーム</span>
-          <span>&gt;</span>
-          <span>求職者管理</span>
-        </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
           {onBack && (
@@ -1989,8 +2039,8 @@ export default function Candidates({
                   <TableRow
                     key={candidate.id}
                     className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => setInternalSelectedCandidateId(candidate.id)}
-                    onDoubleClick={() => setInternalSelectedCandidateId(candidate.id)}
+                    onClick={() => handleCandidateClick(candidate.id)}
+                    onDoubleClick={() => handleCandidateClick(candidate.id)}
                   >
                     <TableCell className="font-medium">{candidate.candidateNo}</TableCell>
                     <TableCell>

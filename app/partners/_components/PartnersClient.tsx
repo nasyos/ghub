@@ -243,11 +243,6 @@ export default function PartnersClient() {
 
       return (
       <div className="flex-1 space-y-4 p-6 bg-gray-50 h-full overflow-y-auto">
-        <div className="flex items-center space-x-1 text-xs text-gray-500 mb-2">
-          <span>ホーム</span>
-          <span>&gt;</span>
-          <span>取引先管理</span>
-        </div>
         {/* ヘッダー */}
         <div className="flex justify-between items-center">
         <div>

@@ -4,6 +4,8 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/contexts/auth-context";
+import { NotificationProvider } from "@/contexts/notification-context";
 
 export const metadata: Metadata = {
   title: "v0 App",
@@ -19,7 +21,11 @@ export default function RootLayout({
   return (
     <html lang="ja" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body>
-        {children}
+        <AuthProvider>
+          <NotificationProvider>
+            {children}
+          </NotificationProvider>
+        </AuthProvider>
         <Toaster />
       </body>
     </html>

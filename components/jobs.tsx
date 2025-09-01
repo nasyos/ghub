@@ -23,6 +23,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
+import { PartnerSelectorModal } from "@/components/partner-selector-modal"
+import { Partner } from "@/lib/partners/types"
 
 const mockJobs = [
   {
@@ -219,9 +221,10 @@ interface DistributionPattern {
 interface JobsProps {
   onNavigate?: (path: string) => void
   onNavigateToSelection?: (jobId: string) => void
+  onNavigateToPipeline?: (jobId: string) => void
 }
 
-export default function Jobs({ onNavigate, onNavigateToSelection }: JobsProps) {
+export default function Jobs({ onNavigate, onNavigateToSelection, onNavigateToPipeline }: JobsProps) {
   const { canSeePage } = useAuth()
 
   const [currentView, setCurrentView] = useState<"list" | "form" | "detail">("list")
@@ -288,6 +291,8 @@ export default function Jobs({ onNavigate, onNavigateToSelection }: JobsProps) {
 
   const [csvImportDialogOpen, setCsvImportDialogOpen] = useState(false)
   const [csvFile, setCsvFile] = useState<File | null>(null)
+  const [partnerSelectorOpen, setPartnerSelectorOpen] = useState(false)
+  const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null)
 
   const resetFilters = () => {
     setSearchTerm("")
@@ -297,6 +302,11 @@ export default function Jobs({ onNavigate, onNavigateToSelection }: JobsProps) {
     setVisaFilter("all")
     setJlptFilter("all")
     setPriorityFilter("all")
+  }
+
+  const handlePartnerSelect = (partner: Partner) => {
+    setSelectedPartner(partner)
+    setFormData(prev => ({ ...prev, company: partner.name }))
   }
 
   const uniqueCompanies = Array.from(new Set(mockJobs.map((job) => job.company)))
@@ -365,21 +375,21 @@ export default function Jobs({ onNavigate, onNavigateToSelection }: JobsProps) {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }))
   }
 
-  const addQualification = (type: "required" | "preferred") => {
+  const addQualification = (type: "requiredQualifications" | "preferredQualifications") => {
     setFormData((prev) => ({
       ...prev,
       [type]: [...prev[type], ""],
     }))
   }
 
-  const updateQualification = (type: "required" | "preferred", index: number, value: string) => {
+  const updateQualification = (type: "requiredQualifications" | "preferredQualifications", index: number, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [type]: prev[type].map((qual, i) => (i === index ? value : qual)),
     }))
   }
 
-  const removeQualification = (type: "required" | "preferred", index: number) => {
+  const removeQualification = (type: "requiredQualifications" | "preferredQualifications", index: number) => {
     setFormData((prev) => ({
       ...prev,
       [type]: prev[type].filter((_, i) => i !== index),
@@ -942,13 +952,29 @@ export default function Jobs({ onNavigate, onNavigateToSelection }: JobsProps) {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="company">企業名 *</Label>
-                        <Input
-                          id="company"
-                          value={formData.company}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, company: e.target.value }))}
-                          placeholder="株式会社ABC介護"
-                          className="h-10"
-                        />
+                        <div className="flex gap-2">
+                          <Input
+                            id="company"
+                            value={formData.company}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, company: e.target.value }))}
+                            placeholder="企業を選択してください"
+                            className="h-10 flex-1"
+                            readOnly
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setPartnerSelectorOpen(true)}
+                            className="h-10"
+                          >
+                            企業選択
+                          </Button>
+                        </div>
+                        {selectedPartner && (
+                          <div className="text-sm text-muted-foreground">
+                            選択中: {selectedPartner.name} ({selectedPartner.department || "部署未設定"})
+                          </div>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="title">職種 *</Label>
@@ -1142,7 +1168,7 @@ export default function Jobs({ onNavigate, onNavigateToSelection }: JobsProps) {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <Label>応募必須要件 *</Label>
-                        <Button type="button" variant="outline" size="sm" onClick={() => addQualification("required")}>
+                        <Button type="button" variant="outline" size="sm" onClick={() => addQualification("requiredQualifications")}>
                           + 追加
                         </Button>
                       </div>
@@ -1151,14 +1177,14 @@ export default function Jobs({ onNavigate, onNavigateToSelection }: JobsProps) {
                           <div key={index} className="flex gap-2">
                             <Input
                               value={qual}
-                              onChange={(e) => updateQualification("required", index, e.target.value)}
+                              onChange={(e) => updateQualification("requiredQualifications", index, e.target.value)}
                               placeholder="必須要件を入力"
                             />
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => removeQualification("required", index)}
+                              onClick={() => removeQualification("requiredQualifications", index)}
                             >
                               <X className="h-4 w-4" />
                             </Button>
@@ -1169,7 +1195,7 @@ export default function Jobs({ onNavigate, onNavigateToSelection }: JobsProps) {
                     <div>
                       <div className="flex items-center justify-between">
                         <Label>歓迎要件</Label>
-                        <Button type="button" variant="outline" size="sm" onClick={() => addQualification("preferred")}>
+                        <Button type="button" variant="outline" size="sm" onClick={() => addQualification("preferredQualifications")}>
                           + 追加
                         </Button>
                       </div>
@@ -1178,14 +1204,14 @@ export default function Jobs({ onNavigate, onNavigateToSelection }: JobsProps) {
                           <div key={index} className="flex gap-2">
                             <Input
                               value={qual}
-                              onChange={(e) => updateQualification("preferred", index, e.target.value)}
+                              onChange={(e) => updateQualification("preferredQualifications", index, e.target.value)}
                               placeholder="歓迎要件を入力"
                             />
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => removeQualification("preferred", index)}
+                              onClick={() => removeQualification("preferredQualifications", index)}
                             >
                               <X className="h-4 w-4" />
                             </Button>
@@ -1439,10 +1465,10 @@ export default function Jobs({ onNavigate, onNavigateToSelection }: JobsProps) {
             <h2 className="text-2xl font-bold text-gray-900">求人詳細 ({job.id})</h2>
           </div>
           <div className="flex items-center gap-2">
-            {canSeePage?.("jobSelection") && (
+            {canSeePage?.("pipeline") && (
               <Button
-                onClick={() => onNavigateToSelection?.(job.id)}
-                data-testid="go-to-selection"
+                onClick={() => onNavigateToPipeline?.(job.id)}
+                data-testid="go-to-pipeline"
                 aria-label="選考管理へ"
               >
                 選考管理へ
@@ -1966,11 +1992,6 @@ export default function Jobs({ onNavigate, onNavigateToSelection }: JobsProps) {
   if (currentView === "list") {
           return (
       <div className="flex-1 space-y-4 p-6 bg-gray-50 h-full overflow-y-auto">
-        <div className="flex items-center space-x-1 text-xs text-gray-500 mb-2">
-          <span>ホーム</span>
-          <span>&gt;</span>
-          <span>求人管理</span>
-        </div>
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">求人管理</h2>
           <div className="flex gap-2">
@@ -2256,6 +2277,14 @@ export default function Jobs({ onNavigate, onNavigateToSelection }: JobsProps) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* 取引先選択モーダル */}
+        <PartnerSelectorModal
+          open={partnerSelectorOpen}
+          onOpenChange={setPartnerSelectorOpen}
+          onSelect={handlePartnerSelect}
+          selectedPartnerId={selectedPartner?.id}
+        />
       </div>
     )
   }
